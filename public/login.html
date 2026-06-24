@@ -87,20 +87,25 @@ async function login(e) {
   btn.textContent = 'Ingresando...';
   btn.disabled = true;
   errEl.classList.remove('visible');
-  const res = await fetch('/api/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
-  });
-  const data = await res.json();
-  if (data.ok) {
-    window.location.href = '/';
-  } else {
-    errEl.textContent = data.error || 'Error al ingresar';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: document.getElementById('email').value, password: document.getElementById('password').value })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      window.location.href = '/';
+    } else {
+      errEl.textContent = data.error || 'Error al ingresar';
+      errEl.classList.add('visible');
+    }
+  } catch(err) {
+    errEl.textContent = 'Error de conexión: ' + err.message;
     errEl.classList.add('visible');
-    btn.textContent = 'Ingresar';
-    btn.disabled = false;
   }
+  btn.textContent = 'Ingresar';
+  btn.disabled = false;
 }
 </script>
 </body>
