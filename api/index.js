@@ -68,8 +68,12 @@ app.post('/api/usuarios', solo('ADMIN'), async (req, res) => {
   } catch(e) { res.status(400).json({ error: 'El email ya existe' }); }
 });
 app.put('/api/usuarios/:id', solo('ADMIN'), async (req, res) => {
-  const { nombre, email, rol, activo, password } = req.body;
-  if (password) {
+  const { nombre, email, rol, activo, password, _solo_password } = req.body;
+  if (_solo_password) {
+    if (!password) return res.status(400).json({ error: 'Contraseña vacía' });
+    const hash = bcrypt.hashSync(password, 10);
+    await pool.query('UPDATE usuarios SET password=$1 WHERE id=$2', [hash, req.params.id]);
+  } else if (password) {
     const hash = bcrypt.hashSync(password, 10);
     await pool.query('UPDATE usuarios SET nombre=$1,email=$2,rol=$3,activo=$4,password=$5 WHERE id=$6', [nombre, email, rol, activo, hash, req.params.id]);
   } else {

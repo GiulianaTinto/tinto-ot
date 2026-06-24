@@ -129,6 +129,31 @@
   </div>
 </div>
 
+<!-- Modal Reset Password -->
+<div class="modal-overlay" id="modal-reset">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="reset-title">Resetear contraseña</h2>
+      <button class="modal-close" onclick="cerrarReset()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reset-id">
+      <div class="form-group">
+        <label>Nueva contraseña</label>
+        <input type="password" id="reset-password" placeholder="Mínimo 6 caracteres">
+      </div>
+      <div class="form-group">
+        <label>Confirmar contraseña</label>
+        <input type="password" id="reset-password2" placeholder="Repetí la contraseña">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarReset()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarReset()">🔑 Cambiar contraseña</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
 
@@ -149,6 +174,7 @@ async function cargarUsuarios() {
       <td>${u.activo ? '✅ Activo' : '⛔ Inactivo'}</td>
       <td>
         <button class="btn btn-info btn-sm" onclick="editarUsuario(${u.id})">✏ Editar</button>
+        <button class="btn btn-sm" style="background:#f39c12;color:white" onclick="resetPassword(${u.id}, '${u.nombre.replace(/'/g,"\\'")}')">🔑 Resetear clave</button>
         <button class="btn btn-danger btn-sm" onclick="eliminarUsuario(${u.id}, '${u.nombre.replace(/'/g,"\\'")}')">✕</button>
       </td>
     </tr>
@@ -214,6 +240,34 @@ async function eliminarUsuario(id, nombre) {
 
 function cerrarModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
+
+function resetPassword(id, nombre) {
+  document.getElementById('reset-id').value = id;
+  document.getElementById('reset-title').textContent = `Resetear clave — ${nombre}`;
+  document.getElementById('reset-password').value = '';
+  document.getElementById('reset-password2').value = '';
+  document.getElementById('modal-reset').classList.add('active');
+}
+
+function cerrarReset() { document.getElementById('modal-reset').classList.remove('active'); }
+document.getElementById('modal-reset').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarReset(); });
+
+async function guardarReset() {
+  const id = document.getElementById('reset-id').value;
+  const pass = document.getElementById('reset-password').value;
+  const pass2 = document.getElementById('reset-password2').value;
+  if (!pass || pass.length < 6) { alert('La contraseña debe tener al menos 6 caracteres'); return; }
+  if (pass !== pass2) { alert('Las contraseñas no coinciden'); return; }
+  const res = await fetch(`/api/usuarios/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: pass, _solo_password: true })
+  });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarReset();
+  alert('Contraseña actualizada correctamente');
+}
 
 async function logout() {
   await fetch('/api/logout', { method: 'POST' });
