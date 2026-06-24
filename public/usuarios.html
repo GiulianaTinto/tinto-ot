@@ -139,12 +139,13 @@
     <div class="modal-body">
       <input type="hidden" id="reset-id">
       <div class="form-group">
-        <label>Nueva contraseña</label>
-        <input type="password" id="reset-password" placeholder="Mínimo 6 caracteres">
-      </div>
-      <div class="form-group">
-        <label>Confirmar contraseña</label>
-        <input type="password" id="reset-password2" placeholder="Repetí la contraseña">
+        <label>Clave generada automáticamente</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="text" id="reset-password" readonly style="font-size:18px;font-weight:700;letter-spacing:2px;background:#f8f9fa;flex:1">
+          <button type="button" class="btn btn-secondary" onclick="regenerar()" title="Generar otra">↺</button>
+          <button type="button" class="btn btn-secondary" onclick="copiarClave()" id="btn-copiar">📋 Copiar</button>
+        </div>
+        <div class="hint">Copiala antes de guardar — no se puede recuperar después.</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -241,12 +242,29 @@ async function eliminarUsuario(id, nombre) {
 function cerrarModal() { document.getElementById('modal-overlay').classList.remove('active'); }
 document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
 
+function generarClave() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  return Array.from({length: 10}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
 function resetPassword(id, nombre) {
   document.getElementById('reset-id').value = id;
   document.getElementById('reset-title').textContent = `Resetear clave — ${nombre}`;
-  document.getElementById('reset-password').value = '';
-  document.getElementById('reset-password2').value = '';
+  document.getElementById('reset-password').value = generarClave();
+  document.getElementById('btn-copiar').textContent = '📋 Copiar';
   document.getElementById('modal-reset').classList.add('active');
+}
+
+function regenerar() {
+  document.getElementById('reset-password').value = generarClave();
+  document.getElementById('btn-copiar').textContent = '📋 Copiar';
+}
+
+function copiarClave() {
+  const clave = document.getElementById('reset-password').value;
+  navigator.clipboard.writeText(clave).then(() => {
+    document.getElementById('btn-copiar').textContent = '✅ Copiada';
+  });
 }
 
 function cerrarReset() { document.getElementById('modal-reset').classList.remove('active'); }
@@ -255,9 +273,7 @@ document.getElementById('modal-reset').addEventListener('click', e => { if (e.ta
 async function guardarReset() {
   const id = document.getElementById('reset-id').value;
   const pass = document.getElementById('reset-password').value;
-  const pass2 = document.getElementById('reset-password2').value;
-  if (!pass || pass.length < 6) { alert('La contraseña debe tener al menos 6 caracteres'); return; }
-  if (pass !== pass2) { alert('Las contraseñas no coinciden'); return; }
+  if (!pass) { alert('No hay clave generada'); return; }
   const res = await fetch(`/api/usuarios/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
