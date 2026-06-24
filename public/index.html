@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Órdenes de Trabajo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+
+  header {
+    background: #1a1a2e;
+    color: white;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  header span { font-size: 13px; opacity: 0.7; }
+  header nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 20px; }
+  header nav a:hover { color: white; }
+
+  /* Selector de cliente con búsqueda */
+  .cliente-selector { position: relative; }
+  .cliente-selector input {
+    width: 100%; padding: 8px 10px; border: 1px solid #d0d0d0;
+    border-radius: 6px; font-size: 13px; font-family: Arial, sans-serif;
+  }
+  .cliente-selector input:focus { outline: 2px solid #c0392b; border-color: transparent; }
+  .cliente-dropdown {
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
+    background: white; border: 1px solid #ccc; border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15); z-index: 200;
+    max-height: 220px; overflow-y: auto;
+  }
+  .cliente-dropdown.open { display: block; }
+  .cliente-option {
+    padding: 9px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f5f5f5;
+  }
+  .cliente-option:hover { background: #f0f4ff; }
+  .cliente-option small { color: #888; display: block; font-size: 11px; }
+  .cliente-option.nuevo { color: #c0392b; font-weight: 700; }
+  .cliente-selected-info {
+    margin-top: 6px; padding: 8px 10px; background: #f8f9fa;
+    border-radius: 6px; font-size: 12px; color: #555; line-height: 1.6;
+    display: none;
+  }
+  .cliente-selected-info.visible { display: block; }
+
+  .toolbar {
+    background: white;
+    padding: 14px 24px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    flex-wrap: wrap;
+  }
+  .toolbar input {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 260px;
+  }
+  .toolbar select {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .btn {
+    padding: 9px 18px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-secondary { background: #2c3e50; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-success { background: #27ae60; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+
+  .container { padding: 24px; }
+
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
+  th { background: #1a1a2e; color: white; padding: 12px 14px; text-align: left; font-size: 13px; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .badge-pendiente { background: #fef3c7; color: #92400e; }
+  .badge-en-proceso { background: #dbeafe; color: #1e40af; }
+  .badge-terminada { background: #d1fae5; color: #065f46; }
+  .badge-entregada { background: #e0e7ff; color: #3730a3; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 100;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+  .modal {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 960px;
+    padding: 0;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    margin: auto;
+  }
+  .modal-header {
+    background: #1a1a2e;
+    color: white;
+    padding: 18px 24px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .modal-body { padding: 24px; overflow-y: auto; max-height: 80vh; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+
+  .section-title {
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #1a1a2e;
+    border-bottom: 2px solid #c0392b;
+    padding-bottom: 6px;
+    margin: 20px 0 14px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; font-weight: 600; color: #555; text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 8px 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: Arial, sans-serif;
+  }
+  .form-group textarea { resize: vertical; min-height: 60px; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  .tintas-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tintas-table th { background: #f0f2f5; padding: 8px; text-align: center; border: 1px solid #ddd; font-size: 12px; }
+  .tintas-table td { padding: 6px; border: 1px solid #eee; }
+  .tintas-table input { width: 100%; border: none; padding: 4px; font-size: 13px; background: transparent; }
+  .tintas-table input:focus { outline: 1px solid #c0392b; background: #fff; border-radius: 3px; }
+
+  .herr-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .herr-table th { background: #f0f2f5; padding: 8px; border: 1px solid #ddd; font-size: 12px; text-align: center; }
+  .herr-table td { padding: 8px; border: 1px solid #eee; text-align: center; }
+  .herr-table td:first-child { text-align: left; font-weight: 600; }
+  .herr-table input[type=number] { width: 60px; padding: 4px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+
+  .stock-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .stock-table th { background: #f0f2f5; padding: 8px; border: 1px solid #ddd; font-size: 12px; }
+  .stock-table td { padding: 6px; border: 1px solid #eee; }
+  .stock-table input { width: 100%; border: none; padding: 4px; font-size: 13px; }
+
+  .empty-state { text-align: center; padding: 60px; color: #999; }
+  .empty-state h3 { font-size: 18px; margin-bottom: 8px; }
+
+  @media print { .no-print { display: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="no-print">
+  <h1>🏭 TINTO LABELS – Órdenes de Trabajo</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="total-info" style="font-size:13px;opacity:0.7"></span>
+    <nav id="nav-links" style="display:flex;align-items:center;gap:4px"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="toolbar no-print">
+  <input type="text" id="buscar" placeholder="🔍 Buscar por OT, cliente, marca..." oninput="cargarOrdenes()">
+  <select id="filtro-estado" onchange="cargarOrdenes()">
+    <option value="">Todos los estados</option>
+    <option value="PENDIENTE">Pendiente</option>
+    <option value="EN PROCESO">En Proceso</option>
+    <option value="TERMINADA">Terminada</option>
+    <option value="ENTREGADA">Entregada</option>
+  </select>
+  <button class="btn btn-primary" onclick="nuevaOrden()">+ Nueva OT</button>
+</div>
+
+<div class="container no-print">
+  <table>
+    <thead>
+      <tr>
+        <th>Nº OT</th>
+        <th>Cliente / Bodega</th>
+        <th>Marca – Varietal</th>
+        <th>Detalle</th>
+        <th>Fec. Entrega</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-ordenes"></tbody>
+  </table>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <h3>No hay órdenes de trabajo</h3>
+    <p>Hacé clic en "Nueva OT" para crear la primera.</p>
+  </div>
+</div>
+
+<!-- Modal Formulario -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nueva Orden de Trabajo</h2>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ot-id">
+
+      <div class="section-title">Encabezado</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nº OT</label>
+          <input type="text" id="numero_ot" placeholder="38997">
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="estado">
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="EN PROCESO">En Proceso</option>
+            <option value="TERMINADA">Terminada</option>
+            <option value="ENTREGADA">Entregada</option>
+          </select>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Cliente / Bodega</label>
+          <input type="hidden" id="cliente_id">
+          <div class="cliente-selector">
+            <input type="text" id="cliente" placeholder="Escribí para buscar un cliente..." autocomplete="off"
+              oninput="buscarClientes()" onfocus="buscarClientes()" onblur="setTimeout(()=>cerrarDropdown(),200)">
+            <div class="cliente-dropdown" id="cliente-dropdown"></div>
+          </div>
+          <div class="cliente-selected-info" id="cliente-info"></div>
+        </div>
+        <div class="form-group">
+          <label>Nº Orden Compra</label>
+          <input type="text" id="numero_oc" placeholder="64130">
+        </div>
+        <div class="form-group">
+          <label>Marca – Varietal</label>
+          <input type="text" id="marca_varietal" placeholder="Portillo">
+        </div>
+        <div class="form-group">
+          <label>Detalle</label>
+          <input type="text" id="detalle" placeholder="Portillo Rosé">
+        </div>
+        <div class="form-group">
+          <label>Código</label>
+          <input type="text" id="codigo" placeholder="03467029740002">
+        </div>
+        <div class="form-group">
+          <label>Fec. Emisión</label>
+          <input type="date" id="fecha_emision">
+        </div>
+        <div class="form-group">
+          <label>Fec. Entrega</label>
+          <input type="date" id="fecha_entrega">
+        </div>
+        <div class="form-group">
+          <label>Máquina</label>
+          <input type="text" id="maquina" placeholder="FA4747">
+        </div>
+      </div>
+
+      <div class="section-title">Etiqueta</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nº Ficha Técnica</label>
+          <input type="text" id="ficha_tecnica" placeholder="1551">
+        </div>
+        <div class="form-group">
+          <label>Tipo de Etiqueta</label>
+          <select id="tipo_etiqueta">
+            <option value="Frente">Frente</option>
+            <option value="Dorso">Dorso</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Año</label>
+          <input type="text" id="anio" placeholder="2026">
+        </div>
+        <div class="form-group">
+          <label>Alcohol</label>
+          <input type="text" id="alcohol" placeholder="13,5%">
+        </div>
+        <div class="form-group">
+          <label>Contenido</label>
+          <input type="text" id="contenido" placeholder="750 ml">
+        </div>
+        <div class="form-group">
+          <label>País / Importador</label>
+          <input type="text" id="pais_importador" placeholder="Indefinido">
+        </div>
+        <div class="form-group">
+          <label>Desarrollo</label>
+          <select id="desarrollo">
+            <option value="NUEVO">NUEVO</option>
+            <option value="EXISTENTE">EXISTENTE</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cantidad</label>
+          <input type="text" id="cantidad" placeholder="50.000">
+        </div>
+      </div>
+
+      <div class="section-title">Detalle Técnico</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Papel</label>
+          <input type="text" id="papel" placeholder="Sablé 8 (Glassine)">
+        </div>
+        <div class="form-group">
+          <label>Troquel</label>
+          <input type="text" id="troquel" placeholder="1203">
+        </div>
+        <div class="form-group">
+          <label>Ancho</label>
+          <input type="text" id="ancho" placeholder="110,7">
+        </div>
+        <div class="form-group">
+          <label>Alto</label>
+          <input type="text" id="alto" placeholder="100">
+        </div>
+        <div class="form-group">
+          <label>Z</label>
+          <input type="text" id="z" placeholder="108">
+        </div>
+        <div class="form-group">
+          <label>Gap Avance</label>
+          <input type="text" id="gap_avance" placeholder="3,6">
+        </div>
+        <div class="form-group">
+          <label>Gap Alto</label>
+          <input type="text" id="gap_alto" placeholder="6">
+        </div>
+        <div class="form-group">
+          <label>Rep. Avance</label>
+          <input type="text" id="rep_avance" placeholder="3">
+        </div>
+        <div class="form-group">
+          <label>Columnas</label>
+          <input type="text" id="columnas" placeholder="3">
+        </div>
+        <div class="form-group">
+          <label>Ancho Sustrato</label>
+          <input type="text" id="ancho_sustrato" placeholder="337">
+        </div>
+        <div class="form-group">
+          <label>Metros Lineales</label>
+          <input type="text" id="metros_lineales" placeholder="2.400">
+        </div>
+      </div>
+
+      <div class="section-title">Ficha de Trabajo – Tintas y Barniz</div>
+      <table class="tintas-table">
+        <thead>
+          <tr>
+            <th width="40">#</th>
+            <th>TINTA</th>
+            <th>BARNIZ</th>
+          </tr>
+        </thead>
+        <tbody id="tintas-body"></tbody>
+      </table>
+
+      <div class="section-title">Herramentales</div>
+      <table class="herr-table">
+        <thead>
+          <tr>
+            <th>Herramental</th>
+            <th>Nuevo – Cobrar</th>
+            <th>Nuevo – NO Cobrar</th>
+            <th>Existente – NO Cobrar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Troquel</td>
+            <td><input type="number" min="0" id="h_troquel_nc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_troquel_nnc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_troquel_enc" placeholder="0"></td>
+          </tr>
+          <tr>
+            <td>Polímeros</td>
+            <td><input type="number" min="0" id="h_pol_nc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_pol_nnc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_pol_enc" placeholder="0"></td>
+          </tr>
+          <tr>
+            <td>Cuño Stamp.</td>
+            <td><input type="number" min="0" id="h_cstamp_nc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_cstamp_nnc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_cstamp_enc" placeholder="0"></td>
+          </tr>
+          <tr>
+            <td>Cuño Relieve</td>
+            <td><input type="number" min="0" id="h_crel_nc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_crel_nnc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_crel_enc" placeholder="0"></td>
+          </tr>
+          <tr>
+            <td>Ma. Serigrafía</td>
+            <td><input type="number" min="0" id="h_seri_nc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_seri_nnc" placeholder="0"></td>
+            <td><input type="number" min="0" id="h_seri_enc" placeholder="0"></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section-title">Trazabilidad</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Comercial</label>
+          <input type="text" id="tr_comercial" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Insumos</label>
+          <input type="text" id="tr_insumos" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Diseño</label>
+          <input type="text" id="tr_diseno" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Producción</label>
+          <input type="text" id="tr_produccion" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Depósito</label>
+          <input type="text" id="tr_deposito" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Taller 1</label>
+          <input type="text" id="tr_taller1" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Taller 2</label>
+          <input type="text" id="tr_taller2" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Taller 3</label>
+          <input type="text" id="tr_taller3" placeholder="Nombre">
+        </div>
+        <div class="form-group">
+          <label>Taller 4</label>
+          <input type="text" id="tr_taller4" placeholder="Nombre">
+        </div>
+      </div>
+
+      <div class="section-title">Observaciones</div>
+      <div class="form-grid">
+        <div class="form-group full">
+          <textarea id="observaciones" placeholder="Ej: IGUALAR A LA APROBACIÓN"></textarea>
+        </div>
+      </div>
+
+      <div class="section-title">Control de Calidad</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Salieron</label>
+          <input type="text" id="cc_salieron" placeholder="">
+        </div>
+        <div class="form-group">
+          <label>Faltaron</label>
+          <input type="text" id="cc_faltaron" placeholder="">
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" id="cc_fecha">
+        </div>
+        <div class="form-group">
+          <label>Operador</label>
+          <input type="text" id="cc_operador" placeholder="">
+        </div>
+        <div class="form-group">
+          <label>Cant. Max por Rollo</label>
+          <input type="text" id="cc_cant_rollo" placeholder="30CM">
+        </div>
+        <div class="form-group">
+          <label>Sentido Bobinado</label>
+          <input type="text" id="cc_sentido" placeholder="3">
+        </div>
+        <div class="form-group">
+          <label>Laminado</label>
+          <select id="cc_laminado">
+            <option value="NO">NO</option>
+            <option value="SI">SI</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Cant. Excedente Max</label>
+          <input type="text" id="cc_exc_max" placeholder="">
+        </div>
+        <div class="form-group">
+          <label>Cant. Faltante Min</label>
+          <input type="text" id="cc_falt_min" placeholder="">
+        </div>
+      </div>
+
+      <div class="section-title">Ingreso a Stock</div>
+      <table class="stock-table">
+        <thead>
+          <tr>
+            <th>Ingreso Stock</th>
+            <th>Nº Remito</th>
+            <th>Nº Factura</th>
+            <th>Fecha</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody id="stock-body">
+          <tr>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="date"></td>
+            <td><input type="text" placeholder=""></td>
+          </tr>
+          <tr>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="date"></td>
+            <td><input type="text" placeholder=""></td>
+          </tr>
+          <tr>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="text" placeholder=""></td>
+            <td><input type="date"></td>
+            <td><input type="text" placeholder=""></td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-info" onclick="verImpresion()">🖨 Vista Impresión</button>
+      <button class="btn btn-primary" onclick="guardarOrden()">💾 Guardar OT</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Impresión -->
+<div id="print-view" style="display:none"></div>
+
+<script>
+// ---- Tintas ----
+function initTintas(data) {
+  const body = document.getElementById('tintas-body');
+  body.innerHTML = '';
+  for (let i = 1; i <= 8; i++) {
+    const t = data && data[i-1] ? data[i-1] : { tinta: '', barniz: '' };
+    const esStamp = i === 5;
+    const esRelieve = i === 7;
+    body.innerHTML += `<tr>
+      <td style="text-align:center;font-weight:700;color:#888">${i}</td>
+      <td><input type="text" id="tinta_${i}" value="${t.tinta || ''}"></td>
+      <td><input type="text" id="barniz_${i}" value="${t.barniz || ''}" placeholder="${esStamp ? 'STAMPING' : esRelieve ? 'RELIEVE' : ''}"></td>
+    </tr>`;
+  }
+}
+
+function getTintas() {
+  return Array.from({length: 8}, (_, i) => ({
+    tinta: document.getElementById(`tinta_${i+1}`).value,
+    barniz: document.getElementById(`barniz_${i+1}`).value
+  }));
+}
+
+// ---- Herramentales ----
+function setHerr(h) {
+  const keys = ['troquel','pol','cstamp','crel','seri'];
+  const types = ['nc','nnc','enc'];
+  keys.forEach(k => types.forEach(t => {
+    const el = document.getElementById(`h_${k}_${t}`);
+    if (el) el.value = (h && h[`${k}_${t}`]) || '';
+  }));
+}
+
+function getHerr() {
+  const keys = ['troquel','pol','cstamp','crel','seri'];
+  const types = ['nc','nnc','enc'];
+  const h = {};
+  keys.forEach(k => types.forEach(t => {
+    h[`${k}_${t}`] = document.getElementById(`h_${k}_${t}`)?.value || '';
+  }));
+  return h;
+}
+
+// ---- Stock ----
+function setStock(rows) {
+  const body = document.getElementById('stock-body');
+  const trs = body.querySelectorAll('tr');
+  trs.forEach((tr, i) => {
+    const row = rows && rows[i] ? rows[i] : {};
+    const inputs = tr.querySelectorAll('input');
+    inputs[0].value = row.tipo || '';
+    inputs[1].value = row.remito || '';
+    inputs[2].value = row.factura || '';
+    inputs[3].value = row.fecha || '';
+    inputs[4].value = row.cantidad || '';
+  });
+}
+
+function getStock() {
+  const body = document.getElementById('stock-body');
+  return Array.from(body.querySelectorAll('tr')).map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    return { tipo: inputs[0].value, remito: inputs[1].value, factura: inputs[2].value, fecha: inputs[3].value, cantidad: inputs[4].value };
+  }).filter(r => Object.values(r).some(v => v));
+}
+
+// ---- API ----
+async function cargarOrdenes() {
+  const q = document.getElementById('buscar').value;
+  const estado = document.getElementById('filtro-estado').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  if (estado) params.set('estado', estado);
+  const res = await fetch('/api/ordenes?' + params);
+  const ordenes = await res.json();
+
+  const estadoBadge = {
+    'PENDIENTE': 'badge-pendiente',
+    'EN PROCESO': 'badge-en-proceso',
+    'TERMINADA': 'badge-terminada',
+    'ENTREGADA': 'badge-entregada'
+  };
+
+  const tbody = document.getElementById('tabla-ordenes');
+  const empty = document.getElementById('empty-state');
+
+  if (!ordenes.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('total-info').textContent = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+  document.getElementById('total-info').textContent = `${ordenes.length} órdenes`;
+
+  tbody.innerHTML = ordenes.map(o => `
+    <tr>
+      <td><strong>${o.numero_ot}</strong></td>
+      <td>${o.cliente || '–'}</td>
+      <td>${o.marca_varietal || '–'}</td>
+      <td>${o.detalle || '–'}</td>
+      <td>${o.fecha_entrega ? formatFecha(o.fecha_entrega) : '–'}</td>
+      <td><span class="badge ${estadoBadge[o.estado] || ''}">${o.estado}</span></td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="editarOrden(${o.id})">✏ Editar</button>
+        <button class="btn btn-success btn-sm" onclick="imprimirOrden(${o.id})">🖨 Imprimir</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarOrden(${o.id}, '${o.numero_ot}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function formatFecha(f) {
+  if (!f) return '';
+  const [y, m, d] = f.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+async function nuevaOrden() {
+  limpiarForm();
+  const res = await fetch('/api/proximo-numero');
+  const data = await res.json();
+  document.getElementById('numero_ot').value = data.numero;
+  const hoy = new Date().toISOString().split('T')[0];
+  document.getElementById('fecha_emision').value = hoy;
+  document.getElementById('modal-title').textContent = 'Nueva Orden de Trabajo';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+async function editarOrden(id) {
+  const res = await fetch(`/api/ordenes/${id}`);
+  const o = await res.json();
+  limpiarForm();
+  document.getElementById('ot-id').value = o.id;
+  document.getElementById('modal-title').textContent = `Editar OT Nº ${o.numero_ot}`;
+
+  // Restaurar selector de cliente
+  if (o.cliente_id) {
+    seleccionarCliente(o.cliente_id);
+  } else if (o.cliente) {
+    document.getElementById('cliente').value = o.cliente;
+  }
+
+  const campos = ['numero_ot','numero_oc','marca_varietal','detalle','codigo',
+    'fecha_emision','fecha_entrega','maquina','ficha_tecnica','anio','alcohol','contenido',
+    'pais_importador','cantidad','papel','troquel','ancho','alto','z','gap_avance',
+    'gap_alto','rep_avance','columnas','ancho_sustrato','metros_lineales','observaciones'];
+  campos.forEach(c => { if (document.getElementById(c)) document.getElementById(c).value = o[c] || ''; });
+
+  ['tipo_etiqueta','desarrollo','estado'].forEach(c => {
+    if (document.getElementById(c)) document.getElementById(c).value = o[c] || '';
+  });
+
+  initTintas(o.tintas);
+  setHerr(o.herramentales);
+
+  const tr = o.trazabilidad || {};
+  ['comercial','insumos','diseno','produccion','deposito','taller1','taller2','taller3','taller4'].forEach(k => {
+    const el = document.getElementById(`tr_${k}`);
+    if (el) el.value = tr[k] || '';
+  });
+
+  const cc = o.control_calidad || {};
+  ['salieron','faltaron','fecha','operador','cant_rollo','sentido','exc_max','falt_min'].forEach(k => {
+    const el = document.getElementById(`cc_${k}`);
+    if (el) el.value = cc[k] || '';
+  });
+  const lam = document.getElementById('cc_laminado');
+  if (lam) lam.value = cc.laminado || 'NO';
+
+  setStock(o.ingreso_stock);
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function limpiarForm() {
+  document.getElementById('ot-id').value = '';
+  document.querySelectorAll('.modal-body input, .modal-body textarea').forEach(el => el.value = '');
+  document.querySelectorAll('.modal-body select').forEach(el => el.selectedIndex = 0);
+  limpiarClienteSelector();
+  initTintas([]);
+  setHerr({});
+  setStock([]);
+}
+
+async function guardarOrden() {
+  const id = document.getElementById('ot-id').value;
+  const data = {
+    numero_ot: document.getElementById('numero_ot').value.trim(),
+    cliente: document.getElementById('cliente').value,
+    cliente_id: document.getElementById('cliente_id').value || null,
+    numero_oc: document.getElementById('numero_oc').value,
+    marca_varietal: document.getElementById('marca_varietal').value,
+    detalle: document.getElementById('detalle').value,
+    codigo: document.getElementById('codigo').value,
+    fecha_emision: document.getElementById('fecha_emision').value,
+    fecha_entrega: document.getElementById('fecha_entrega').value,
+    maquina: document.getElementById('maquina').value,
+    ficha_tecnica: document.getElementById('ficha_tecnica').value,
+    tipo_etiqueta: document.getElementById('tipo_etiqueta').value,
+    anio: document.getElementById('anio').value,
+    alcohol: document.getElementById('alcohol').value,
+    contenido: document.getElementById('contenido').value,
+    pais_importador: document.getElementById('pais_importador').value,
+    desarrollo: document.getElementById('desarrollo').value,
+    cantidad: document.getElementById('cantidad').value,
+    papel: document.getElementById('papel').value,
+    troquel: document.getElementById('troquel').value,
+    ancho: document.getElementById('ancho').value,
+    alto: document.getElementById('alto').value,
+    z: document.getElementById('z').value,
+    gap_avance: document.getElementById('gap_avance').value,
+    gap_alto: document.getElementById('gap_alto').value,
+    rep_avance: document.getElementById('rep_avance').value,
+    columnas: document.getElementById('columnas').value,
+    ancho_sustrato: document.getElementById('ancho_sustrato').value,
+    metros_lineales: document.getElementById('metros_lineales').value,
+    observaciones: document.getElementById('observaciones').value,
+    estado: document.getElementById('estado').value,
+    tintas: getTintas(),
+    herramentales: getHerr(),
+    trazabilidad: {
+      comercial: document.getElementById('tr_comercial').value,
+      insumos: document.getElementById('tr_insumos').value,
+      diseno: document.getElementById('tr_diseno').value,
+      produccion: document.getElementById('tr_produccion').value,
+      deposito: document.getElementById('tr_deposito').value,
+      taller1: document.getElementById('tr_taller1').value,
+      taller2: document.getElementById('tr_taller2').value,
+      taller3: document.getElementById('tr_taller3').value,
+      taller4: document.getElementById('tr_taller4').value,
+    },
+    control_calidad: {
+      salieron: document.getElementById('cc_salieron').value,
+      faltaron: document.getElementById('cc_faltaron').value,
+      fecha: document.getElementById('cc_fecha').value,
+      operador: document.getElementById('cc_operador').value,
+      cant_rollo: document.getElementById('cc_cant_rollo').value,
+      sentido: document.getElementById('cc_sentido').value,
+      laminado: document.getElementById('cc_laminado').value,
+      exc_max: document.getElementById('cc_exc_max').value,
+      falt_min: document.getElementById('cc_falt_min').value,
+    },
+    ingreso_stock: getStock()
+  };
+
+  if (!data.numero_ot) { alert('El Nº de OT es obligatorio'); return; }
+
+  const url = id ? `/api/ordenes/${id}` : '/api/ordenes';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarModal();
+  cargarOrdenes();
+}
+
+async function eliminarOrden(id, nro) {
+  if (!confirm(`¿Eliminar la OT Nº ${nro}? Esta acción no se puede deshacer.`)) return;
+  await fetch(`/api/ordenes/${id}`, { method: 'DELETE' });
+  cargarOrdenes();
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+async function imprimirOrden(id) {
+  const res = await fetch(`/api/ordenes/${id}`);
+  const o = await res.json();
+  abrirImpresion(o);
+}
+
+async function verImpresion() {
+  const id = document.getElementById('ot-id').value;
+  let o;
+  if (id) {
+    const res = await fetch(`/api/ordenes/${id}`);
+    o = await res.json();
+  } else {
+    o = recolectarDatos();
+  }
+  abrirImpresion(o);
+}
+
+function recolectarDatos() {
+  return {
+    numero_ot: document.getElementById('numero_ot').value,
+    cliente: document.getElementById('cliente').value,
+    numero_oc: document.getElementById('numero_oc').value,
+    marca_varietal: document.getElementById('marca_varietal').value,
+    detalle: document.getElementById('detalle').value,
+    codigo: document.getElementById('codigo').value,
+    fecha_emision: document.getElementById('fecha_emision').value,
+    fecha_entrega: document.getElementById('fecha_entrega').value,
+    maquina: document.getElementById('maquina').value,
+    ficha_tecnica: document.getElementById('ficha_tecnica').value,
+    tipo_etiqueta: document.getElementById('tipo_etiqueta').value,
+    anio: document.getElementById('anio').value,
+    alcohol: document.getElementById('alcohol').value,
+    contenido: document.getElementById('contenido').value,
+    pais_importador: document.getElementById('pais_importador').value,
+    desarrollo: document.getElementById('desarrollo').value,
+    cantidad: document.getElementById('cantidad').value,
+    papel: document.getElementById('papel').value,
+    troquel: document.getElementById('troquel').value,
+    ancho: document.getElementById('ancho').value,
+    alto: document.getElementById('alto').value,
+    z: document.getElementById('z').value,
+    gap_avance: document.getElementById('gap_avance').value,
+    gap_alto: document.getElementById('gap_alto').value,
+    rep_avance: document.getElementById('rep_avance').value,
+    columnas: document.getElementById('columnas').value,
+    ancho_sustrato: document.getElementById('ancho_sustrato').value,
+    metros_lineales: document.getElementById('metros_lineales').value,
+    observaciones: document.getElementById('observaciones').value,
+    tintas: getTintas(),
+    herramentales: getHerr(),
+    trazabilidad: {
+      comercial: document.getElementById('tr_comercial').value,
+      insumos: document.getElementById('tr_insumos').value,
+      diseno: document.getElementById('tr_diseno').value,
+      produccion: document.getElementById('tr_produccion').value,
+      deposito: document.getElementById('tr_deposito').value,
+      taller1: document.getElementById('tr_taller1').value,
+      taller2: document.getElementById('tr_taller2').value,
+      taller3: document.getElementById('tr_taller3').value,
+      taller4: document.getElementById('tr_taller4').value,
+    },
+    control_calidad: {
+      salieron: document.getElementById('cc_salieron').value,
+      faltaron: document.getElementById('cc_faltaron').value,
+      fecha: document.getElementById('cc_fecha').value,
+      operador: document.getElementById('cc_operador').value,
+      cant_rollo: document.getElementById('cc_cant_rollo').value,
+      sentido: document.getElementById('cc_sentido').value,
+      laminado: document.getElementById('cc_laminado').value,
+      exc_max: document.getElementById('cc_exc_max').value,
+      falt_min: document.getElementById('cc_falt_min').value,
+    },
+    ingreso_stock: getStock()
+  };
+}
+
+function abrirImpresion(o) {
+  const tr = o.trazabilidad || {};
+  const cc = o.control_calidad || {};
+  const h = o.herramentales || {};
+  const tintas = o.tintas || [];
+  const stock = o.ingreso_stock || [];
+
+  const tintasRows = Array.from({length:8}, (_,i) => {
+    const t = tintas[i] || {};
+    const barnizLabel = i === 4 ? '<strong>STAMPING</strong>' : i === 6 ? '<strong>RELIEVE</strong>' : (t.barniz || '');
+    return `<tr>
+      <td style="text-align:center;border:1px solid #ccc;padding:4px">${i+1}</td>
+      <td style="border:1px solid #ccc;padding:4px">${t.tinta || ''}</td>
+      <td style="border:1px solid #ccc;padding:4px">${barnizLabel}</td>
+    </tr>`;
+  }).join('');
+
+  const herrRows = [
+    ['Troquel', 'troquel'],
+    ['Polímeros', 'pol'],
+    ['Cuño Stamp.', 'cstamp'],
+    ['Cuño Relieve', 'crel'],
+    ['Ma. Serigrafía', 'seri'],
+  ].map(([label, key]) => `<tr>
+    <td style="border:1px solid #ccc;padding:4px">${label}</td>
+    <td style="border:1px solid #ccc;padding:4px;text-align:center">${h[key+'_nc'] || ''}</td>
+    <td style="border:1px solid #ccc;padding:4px;text-align:center">${h[key+'_nnc'] || ''}</td>
+    <td style="border:1px solid #ccc;padding:4px;text-align:center">${h[key+'_enc'] || ''}</td>
+  </tr>`).join('');
+
+  const stockRows = (stock.length ? stock : [{},{},{}]).map(r => `<tr>
+    <td style="border:1px solid #ccc;padding:4px;height:22px">${r.tipo||''}</td>
+    <td style="border:1px solid #ccc;padding:4px">${r.remito||''}</td>
+    <td style="border:1px solid #ccc;padding:4px">${r.factura||''}</td>
+    <td style="border:1px solid #ccc;padding:4px">${r.fecha ? formatFecha(r.fecha) : ''}</td>
+    <td style="border:1px solid #ccc;padding:4px">${r.cantidad||''}</td>
+  </tr>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>OT Nº ${o.numero_ot}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 11px; padding: 12px; }
+  .page { max-width: 100%; }
+  h1 { font-size: 16px; text-align: center; margin-bottom: 8px; font-weight: 700; }
+  table { border-collapse: collapse; width: 100%; }
+  td, th { border: 1px solid #999; padding: 4px 6px; }
+  .label { background: #ddd; font-weight: 700; white-space: nowrap; }
+  .section-header { background: #1a1a2e; color: white; font-weight: 700; text-align: center; padding: 5px; font-size: 12px; }
+  .obs { background: #ffff00; font-weight: 700; text-align: center; font-size: 13px; padding: 6px; border: 2px solid #999; }
+  .aviso { color: red; font-weight: 700; font-size: 10px; padding: 6px; border: 1px solid #999; }
+  .firma { border-top: 1px solid #000; width: 200px; text-align: center; font-size: 10px; padding-top: 4px; margin-top: 30px; }
+  @media print { @page { margin: 10mm; } }
+</style>
+</head><body>
+<div class="page">
+  <table style="margin-bottom:8px">
+    <tr>
+      <td rowspan="2" width="180" style="border:none;padding:0">
+        <div style="background:#1a1a2e;color:white;padding:10px;text-align:center;border-radius:4px">
+          <div style="font-size:18px;font-weight:900;letter-spacing:2px">TINTO</div>
+          <div style="font-size:11px;font-weight:700">LABELS</div>
+          <div style="font-size:9px">MENDOZA – ARGENTINA</div>
+        </div>
+      </td>
+      <td colspan="4" style="text-align:center;font-size:18px;font-weight:900;border:none">ORDEN DE TRABAJO</td>
+      <td class="label" width="60">Nº</td>
+      <td width="120" style="font-size:16px;font-weight:900">${o.numero_ot || ''}</td>
+    </tr>
+    <tr>
+      <td colspan="5" style="border:none"></td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:6px">
+    <tr>
+      <td class="label" width="140">CLIENTE / BODEGA</td>
+      <td colspan="3">${o.cliente || ''}</td>
+      <td class="label" width="100">Código</td>
+      <td>${o.codigo || ''}</td>
+    </tr>
+    <tr>
+      <td class="label">Nº Orden Compra</td>
+      <td colspan="3">${o.numero_oc || ''}</td>
+      <td class="label">Fec. Emisión</td>
+      <td>${o.fecha_emision ? formatFecha(o.fecha_emision) : ''}</td>
+    </tr>
+    <tr>
+      <td class="label">MARCA – VARIETAL</td>
+      <td colspan="3">${o.marca_varietal || ''}</td>
+      <td class="label">Fec. Entrega</td>
+      <td>${o.fecha_entrega ? formatFecha(o.fecha_entrega) : ''}</td>
+    </tr>
+    <tr>
+      <td class="label">DETALLE</td>
+      <td colspan="5">${o.detalle || ''}</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:6px">
+    <tr>
+      <td class="label" width="140">Nº Ficha Técnica</td><td>${o.ficha_tecnica || ''}</td>
+      <td class="label" width="100">Máquina</td><td>${o.maquina || ''}</td>
+    </tr>
+    <tr>
+      <td class="label">Tipo de Etiqueta</td><td>${o.tipo_etiqueta || ''}</td>
+      <td class="label">Año</td><td>${o.anio || ''}</td>
+    </tr>
+    <tr>
+      <td class="label">Alcohol</td><td>${o.alcohol || ''}</td>
+      <td class="label">Contenido</td><td>${o.contenido || ''}</td>
+    </tr>
+    <tr>
+      <td class="label">País / Importador</td><td>${o.pais_importador || ''}</td>
+      <td class="label">Desarrollo</td><td>${o.desarrollo || ''}</td>
+    </tr>
+    <tr>
+      <td class="label">CANTIDAD</td><td colspan="3">${o.cantidad || ''}</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:6px">
+    <tr><td colspan="4" class="section-header">DETALLE</td><td colspan="3" class="section-header">Ficha de Trabajo</td></tr>
+    <tr>
+      <td class="label">PAPEL</td><td colspan="3">${o.papel || ''}</td>
+      <td class="label" style="text-align:center">#</td><td class="label" style="text-align:center">TINTA</td><td class="label" style="text-align:center">BARNIZ</td>
+    </tr>
+    <tr><td class="label">TROQUEL</td><td colspan="3">${o.troquel || ''}</td>${tintasRows.split('</tr>')[0].replace('<tr>','')}</tr>
+    ${tintasRows.split('</tr>').slice(1,7).map((r,i) => {
+      const detRow = [
+        `<td class="label">ANCHO</td><td colspan="3">${o.ancho || ''}</td>`,
+        `<td class="label">ALTO</td><td colspan="3">${o.alto || ''}</td>`,
+        `<td class="label">Z</td><td colspan="3">${o.z || ''}</td>`,
+        `<td class="label">GAP AVANCE</td><td colspan="3">${o.gap_avance || ''}</td>`,
+        `<td class="label">GAP ALTO</td><td colspan="3">${o.gap_alto || ''}</td>`,
+        `<td class="label">REP. AVANCE</td><td colspan="3">${o.rep_avance || ''}</td>`,
+      ][i] || '<td colspan="4"></td>';
+      return `<tr>${detRow}${r.replace('<tr>','')}</tr>`;
+    }).join('')}
+    <tr><td class="label">COLUMNAS</td><td colspan="3">${o.columnas || ''}</td><td colspan="3"></td></tr>
+    <tr><td class="label">ANCHO SUSTRATO</td><td colspan="3">${o.ancho_sustrato || ''}</td><td colspan="3"></td></tr>
+    <tr><td class="label">METROS LINEALES</td><td colspan="3">${o.metros_lineales || ''}</td><td colspan="3"></td></tr>
+  </table>
+
+  <table style="margin-bottom:6px">
+    <tr><td colspan="4" class="section-header">Herramentales</td></tr>
+    <tr>
+      <th class="label">Herramental</th>
+      <th class="label" style="text-align:center">Nuevo – Cobrar</th>
+      <th class="label" style="text-align:center">Nuevo – NO Cobrar</th>
+      <th class="label" style="text-align:center">Existente – NO Cobrar</th>
+    </tr>
+    ${herrRows}
+  </table>
+
+  <table style="margin-bottom:6px">
+    <tr><td colspan="4" class="section-header">TRAZABILIDAD</td></tr>
+    <tr>
+      <td class="label" width="120">COMERCIAL</td><td>${tr.comercial||''}</td>
+      <td class="label" width="120">INSUMOS</td><td>${tr.insumos||''}</td>
+    </tr>
+    <tr>
+      <td class="label">DISEÑO</td><td>${tr.diseno||''}</td>
+      <td class="label">PRODUCCIÓN</td><td>${tr.produccion||''}</td>
+    </tr>
+    <tr>
+      <td class="label">DEPÓSITO</td><td>${tr.deposito||''}</td>
+      <td class="label">TALLER</td><td>${tr.taller1||''}</td>
+    </tr>
+    <tr><td class="label">TALLER</td><td>${tr.taller2||''}</td><td class="label">TALLER</td><td>${tr.taller3||''}</td></tr>
+  </table>
+
+  ${o.observaciones ? `<div class="obs" style="margin-bottom:6px">${o.observaciones}</div>` : ''}
+
+  <table style="margin-bottom:6px">
+    <tr><td colspan="6" class="section-header">Control Calidad</td></tr>
+    <tr>
+      <td class="label">Salieron</td><td>${cc.salieron||''}</td>
+      <td class="label">Cant. Max por Rollo</td><td>${cc.cant_rollo||''}</td>
+      <td class="label">Sentido Bobinado</td><td>${cc.sentido||''}</td>
+    </tr>
+    <tr>
+      <td class="label">Faltaron</td><td>${cc.faltaron||''}</td>
+      <td class="label">Laminado</td><td>${cc.laminado||''}</td>
+      <td class="label">Cant. Exc. Max</td><td>${cc.exc_max||''}</td>
+    </tr>
+    <tr>
+      <td class="label">Fecha</td><td>${cc.fecha ? formatFecha(cc.fecha) : ''}</td>
+      <td class="label">Cant. Falt. Min</td><td>${cc.falt_min||''}</td>
+      <td class="label">Operador</td><td>${cc.operador||''}</td>
+    </tr>
+  </table>
+
+  <table style="margin-bottom:6px">
+    <tr><th class="label">INGRESO STOCK</th><th class="label">Nº REMITO</th><th class="label">Nº FACTURA</th><th class="label">FECHA</th><th class="label">CANTIDAD</th></tr>
+    ${stockRows}
+  </table>
+
+  <div class="aviso">ATENCIÓN: Antes de la impresión, controlar la existencia en stock de las etiquetas. En caso contrario, será responsabilidad de PRODUCCIÓN.</div>
+
+  <div style="display:flex;justify-content:space-between;margin-top:16px">
+    <div>
+      <div style="font-size:10px">CONTROL CRUZADO: ______ / ______ / ______</div>
+    </div>
+    <div class="firma">FIRMA DE PRODUCCIÓN</div>
+  </div>
+</div>
+<script>window.onload = () => window.print();<\/script>
+</body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+}
+
+// Cerrar modal al hacer click afuera
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+// ---- Selector de clientes ----
+let todosLosClientes = [];
+
+async function cargarTodosLosClientes() {
+  const res = await fetch('/api/clientes');
+  todosLosClientes = await res.json();
+}
+
+function buscarClientes() {
+  const q = document.getElementById('cliente').value.toLowerCase();
+  const dropdown = document.getElementById('cliente-dropdown');
+  const filtrados = q
+    ? todosLosClientes.filter(c => c.nombre.toLowerCase().includes(q) || (c.contacto||'').toLowerCase().includes(q))
+    : todosLosClientes;
+
+  if (!filtrados.length && !q) {
+    dropdown.innerHTML = `<div class="cliente-option nuevo" onmousedown="irAClientes()">+ Agregar nuevo cliente</div>`;
+  } else {
+    dropdown.innerHTML = filtrados.map(c => `
+      <div class="cliente-option" onmousedown="seleccionarCliente(${c.id})">
+        <strong>${c.nombre}</strong>
+        <small>${[c.localidad, c.contacto].filter(Boolean).join(' · ')}</small>
+      </div>
+    `).join('') + `<div class="cliente-option nuevo" onmousedown="irAClientes()">+ Agregar nuevo cliente</div>`;
+  }
+
+  dropdown.classList.add('open');
+}
+
+function seleccionarCliente(id) {
+  const c = todosLosClientes.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('cliente_id').value = c.id;
+  document.getElementById('cliente').value = c.nombre;
+  cerrarDropdown();
+
+  const info = document.getElementById('cliente-info');
+  const partes = [
+    c.domicilio, [c.codigo_postal, c.localidad].filter(Boolean).join(' '),
+    c.telefono && `Tel: ${c.telefono}`, c.celular && `Cel: ${c.celular}`,
+    c.mail, c.contacto && `Contacto: ${c.contacto}`
+  ].filter(Boolean);
+  info.innerHTML = partes.join(' &nbsp;|&nbsp; ');
+  info.classList.add('visible');
+}
+
+function cerrarDropdown() {
+  document.getElementById('cliente-dropdown').classList.remove('open');
+}
+
+function irAClientes() {
+  window.location.href = '/clientes.html';
+}
+
+function limpiarClienteSelector() {
+  document.getElementById('cliente_id').value = '';
+  document.getElementById('cliente').value = '';
+  document.getElementById('cliente-info').innerHTML = '';
+  document.getElementById('cliente-info').classList.remove('visible');
+}
+
+// ---- Sesión ----
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+const PUEDE_EDITAR = ['ADMIN','COMERCIAL','PRODUCCION','PREPRENSA'];
+const PUEDE_ELIMINAR = ['ADMIN','COMERCIAL'];
+let usuarioActual = null;
+
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  usuarioActual = await res.json();
+  document.getElementById('user-label').textContent = `${usuarioActual.nombre} · ${ROLES_LABEL[usuarioActual.rol]||usuarioActual.rol}`;
+
+  const nav = document.getElementById('nav-links');
+  const linkStyle = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  nav.innerHTML = `<a href="/clientes.html" style="${linkStyle}">👥 Clientes</a>`;
+  if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/usuarios.html" style="${linkStyle}">⚙ Usuarios</a>`;
+
+  // Ocultar botón Nueva OT si no tiene permiso
+  if (!PUEDE_EDITAR.includes(usuarioActual.rol)) {
+    document.querySelector('.btn-primary[onclick="nuevaOrden()"]')?.remove();
+  }
+}
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+// Init
+initTintas([]);
+initSesion();
+cargarTodosLosClientes();
+cargarOrdenes();
+</script>
+</body>
+</html>

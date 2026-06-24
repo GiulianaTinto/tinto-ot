@@ -1,0 +1,23 @@
+{
+  "name": "tinto-ot",
+  "version": "1.0.0",
+  "description": "Sistema de Órdenes de Trabajo - Tinto Labels",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.22.0"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true,
+    "sqlite3@5.1.7": true
+  },
+  "license": "ISC"
+}

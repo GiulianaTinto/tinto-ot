@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Usuarios</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  header nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 20px; }
+  header nav a:hover { color: white; }
+  .user-info { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+  .user-info span { color: #ccc; }
+  .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .btn-logout:hover { background: rgba(255,255,255,0.2); }
+  .toolbar { background: white; padding: 14px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #ddd; }
+  .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-secondary { background: #2c3e50; color: white; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .container { padding: 24px; }
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; }
+  th { background: #1a1a2e; color: white; padding: 12px 14px; text-align: left; font-size: 13px; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+  .rol-ADMIN { background: #1a1a2e; color: white; }
+  .rol-COMERCIAL { background: #dbeafe; color: #1e40af; }
+  .rol-PRODUCCION { background: #d1fae5; color: #065f46; }
+  .rol-DEPOSITO { background: #fef3c7; color: #92400e; }
+  .rol-COMPRAS { background: #ede9fe; color: #5b21b6; }
+  .rol-PREPRENSA { background: #fce7f3; color: #9d174d; }
+  .inactivo { opacity: 0.5; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; padding: 20px; }
+  .modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+  .modal { background: white; border-radius: 12px; width: 100%; max-width: 480px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { background: #1a1a2e; color: white; padding: 18px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; }
+  .form-group input, .form-group select { padding: 9px 11px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; font-family: Arial, sans-serif; }
+  .hint { font-size: 11px; color: #888; margin-top: 2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>👤 Usuarios</h1>
+  <div class="user-info">
+    <nav>
+      <a href="/">Órdenes</a>
+      <a href="/clientes.html">Clientes</a>
+    </nav>
+    <span id="user-label"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="nuevoUsuario()">+ Nuevo Usuario</button>
+</div>
+
+<div class="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Email</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-usuarios"></tbody>
+  </table>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nuevo Usuario</h2>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="usuario-id">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="nombre" placeholder="María García">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="maria@tintolabels.com">
+      </div>
+      <div class="form-group">
+        <label>Rol</label>
+        <select id="rol">
+          <option value="ADMIN">Administrador</option>
+          <option value="COMERCIAL">Comercial</option>
+          <option value="PRODUCCION">Producción</option>
+          <option value="DEPOSITO">Depósito</option>
+          <option value="COMPRAS">Compras</option>
+          <option value="PREPRENSA">Preprensa</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label id="pass-label">Contraseña</label>
+        <input type="password" id="password" placeholder="Mínimo 6 caracteres">
+        <div class="hint" id="pass-hint"></div>
+      </div>
+      <div class="form-group" id="activo-group" style="display:none">
+        <label>Estado</label>
+        <select id="activo">
+          <option value="1">Activo</option>
+          <option value="0">Inactivo</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarUsuario()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+
+async function init() {
+  const me = await fetch('/api/me').then(r => r.json());
+  if (me.rol !== 'ADMIN') { document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#c0392b;font-size:18px">Sin acceso — solo administradores</div>'; return; }
+  document.getElementById('user-label').textContent = `${me.nombre} · ${ROLES_LABEL[me.rol]}`;
+  cargarUsuarios();
+}
+
+async function cargarUsuarios() {
+  const usuarios = await fetch('/api/usuarios').then(r => r.json());
+  document.getElementById('tabla-usuarios').innerHTML = usuarios.map(u => `
+    <tr class="${u.activo ? '' : 'inactivo'}">
+      <td><strong>${u.nombre}</strong></td>
+      <td>${u.email}</td>
+      <td><span class="badge rol-${u.rol}">${ROLES_LABEL[u.rol] || u.rol}</span></td>
+      <td>${u.activo ? '✅ Activo' : '⛔ Inactivo'}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="editarUsuario(${u.id})">✏ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarUsuario(${u.id}, '${u.nombre.replace(/'/g,"\\'")}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function nuevoUsuario() {
+  document.getElementById('usuario-id').value = '';
+  document.getElementById('nombre').value = '';
+  document.getElementById('email').value = '';
+  document.getElementById('password').value = '';
+  document.getElementById('rol').value = 'COMERCIAL';
+  document.getElementById('activo').value = '1';
+  document.getElementById('pass-label').textContent = 'Contraseña';
+  document.getElementById('pass-hint').textContent = '';
+  document.getElementById('activo-group').style.display = 'none';
+  document.getElementById('modal-title').textContent = 'Nuevo Usuario';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+async function editarUsuario(id) {
+  const u = await fetch(`/api/usuarios`).then(r => r.json()).then(list => list.find(x => x.id === id));
+  document.getElementById('usuario-id').value = u.id;
+  document.getElementById('nombre').value = u.nombre;
+  document.getElementById('email').value = u.email;
+  document.getElementById('password').value = '';
+  document.getElementById('rol').value = u.rol;
+  document.getElementById('activo').value = u.activo ? '1' : '0';
+  document.getElementById('pass-label').textContent = 'Nueva contraseña (opcional)';
+  document.getElementById('pass-hint').textContent = 'Dejá en blanco para no cambiarla';
+  document.getElementById('activo-group').style.display = 'block';
+  document.getElementById('modal-title').textContent = 'Editar Usuario';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+async function guardarUsuario() {
+  const id = document.getElementById('usuario-id').value;
+  const data = {
+    nombre: document.getElementById('nombre').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    rol: document.getElementById('rol').value,
+    activo: document.getElementById('activo').value === '1',
+    password: document.getElementById('password').value,
+  };
+  if (!data.nombre || !data.email) { alert('Nombre y email son obligatorios'); return; }
+  if (!id && !data.password) { alert('La contraseña es obligatoria para nuevos usuarios'); return; }
+  const url = id ? `/api/usuarios/${id}` : '/api/usuarios';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarModal();
+  cargarUsuarios();
+}
+
+async function eliminarUsuario(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}"?`)) return;
+  const res = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (json.error) { alert(json.error); return; }
+  cargarUsuarios();
+}
+
+function cerrarModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target === e.currentTarget) cerrarModal(); });
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+init();
+</script>
+</body>
+</html>

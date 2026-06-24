@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Clientes</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  header nav a { color: #aaa; text-decoration: none; font-size: 14px; margin-left: 20px; }
+  header nav a:hover { color: white; }
+  .toolbar { background: white; padding: 14px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #ddd; }
+  .toolbar input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; width: 280px; }
+  .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-secondary { background: #2c3e50; color: white; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .container { padding: 24px; }
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
+  th { background: #1a1a2e; color: white; padding: 12px 14px; text-align: left; font-size: 13px; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+  .empty-state { text-align: center; padding: 60px; color: #999; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; padding: 20px; }
+  .modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+  .modal { background: white; border-radius: 12px; width: 100%; max-width: 640px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { background: #1a1a2e; color: white; padding: 18px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; }
+  .form-group input { padding: 9px 11px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; font-family: Arial, sans-serif; }
+  .form-group input:focus { outline: 2px solid #c0392b; border-color: transparent; }
+</style>
+</head>
+<body>
+<header>
+  <h1>👥 Clientes</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <nav id="nav-links"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="buscar" placeholder="🔍 Buscar por nombre o contacto..." oninput="cargarClientes()">
+  <button class="btn btn-primary" onclick="nuevoCliente()">+ Nuevo Cliente</button>
+</div>
+
+<div class="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Nombre / Razón Social</th>
+        <th>Localidad</th>
+        <th>Teléfono</th>
+        <th>Mail</th>
+        <th>Contacto</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-clientes"></tbody>
+  </table>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <h3>No hay clientes registrados</h3>
+    <p>Hacé clic en "Nuevo Cliente" para agregar el primero.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nuevo Cliente</h2>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cliente-id">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Código Cliente (hasta 10 car.)</label>
+          <input type="text" id="codigo_cliente" placeholder="BODSAN001" maxlength="10"
+            oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')">
+        </div>
+        <div class="form-group">
+          <label>Nombre / Razón Social *</label>
+          <input type="text" id="nombre" placeholder="Bodega Sanlentein S.A">
+        </div>
+        <div class="form-group full">
+          <label>Domicilio</label>
+          <input type="text" id="domicilio" placeholder="Av. San Martín 1234">
+        </div>
+        <div class="form-group">
+          <label>Código Postal</label>
+          <input type="text" id="codigo_postal" placeholder="5500">
+        </div>
+        <div class="form-group">
+          <label>Localidad</label>
+          <input type="text" id="localidad" placeholder="Mendoza">
+        </div>
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="telefono" placeholder="0261-4234567">
+        </div>
+        <div class="form-group">
+          <label>Celular</label>
+          <input type="text" id="celular" placeholder="261-1234567">
+        </div>
+        <div class="form-group full">
+          <label>Mail</label>
+          <input type="email" id="mail" placeholder="contacto@bodega.com">
+        </div>
+        <div class="form-group full">
+          <label>Contacto</label>
+          <input type="text" id="contacto" placeholder="Nombre del contacto principal">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCliente()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+async function cargarClientes() {
+  const q = document.getElementById('buscar').value;
+  const params = new URLSearchParams();
+  if (q) params.set('q', q);
+  const res = await fetch('/api/clientes?' + params);
+  const clientes = await res.json();
+  const tbody = document.getElementById('tabla-clientes');
+  const empty = document.getElementById('empty-state');
+  if (!clientes.length) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = clientes.map(c => `
+    <tr>
+      <td><code style="font-size:12px;background:#f0f2f5;padding:2px 6px;border-radius:4px">${c.codigo_cliente || '–'}</code></td>
+      <td><strong>${c.nombre}</strong></td>
+      <td>${[c.localidad, c.codigo_postal].filter(Boolean).join(' ') || '–'}</td>
+      <td>${c.telefono || c.celular || '–'}</td>
+      <td>${c.mail || '–'}</td>
+      <td>${c.contacto || '–'}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="editarCliente(${c.id})">✏ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarCliente(${c.id}, '${c.nombre.replace(/'/g,"\\'")}')">✕</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function nuevoCliente() {
+  limpiarForm();
+  document.getElementById('modal-title').textContent = 'Nuevo Cliente';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+async function editarCliente(id) {
+  const res = await fetch(`/api/clientes/${id}`);
+  const c = await res.json();
+  limpiarForm();
+  document.getElementById('cliente-id').value = c.id;
+  document.getElementById('modal-title').textContent = 'Editar Cliente';
+  ['codigo_cliente','nombre','domicilio','codigo_postal','localidad','telefono','mail','celular','contacto'].forEach(k => {
+    document.getElementById(k).value = c[k] || '';
+  });
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+function limpiarForm() {
+  document.getElementById('cliente-id').value = '';
+  ['codigo_cliente','nombre','domicilio','codigo_postal','localidad','telefono','mail','celular','contacto'].forEach(k => {
+    document.getElementById(k).value = '';
+  });
+}
+
+async function guardarCliente() {
+  const id = document.getElementById('cliente-id').value;
+  const data = {
+    codigo_cliente: document.getElementById('codigo_cliente').value,
+    nombre: document.getElementById('nombre').value.trim(),
+    domicilio: document.getElementById('domicilio').value,
+    codigo_postal: document.getElementById('codigo_postal').value,
+    localidad: document.getElementById('localidad').value,
+    telefono: document.getElementById('telefono').value,
+    mail: document.getElementById('mail').value,
+    celular: document.getElementById('celular').value,
+    contacto: document.getElementById('contacto').value,
+  };
+  if (!data.nombre) { alert('El nombre es obligatorio'); return; }
+  const url = id ? `/api/clientes/${id}` : '/api/clientes';
+  const method = id ? 'PUT' : 'POST';
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarModal();
+  cargarClientes();
+}
+
+async function eliminarCliente(id, nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}"? Esta acción no se puede deshacer.`)) return;
+  await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
+  cargarClientes();
+}
+
+function cerrarModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+}
+
+document.getElementById('modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) cerrarModal();
+});
+
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+const PUEDE_EDITAR_CLIENTES = ['ADMIN','COMERCIAL','COMPRAS'];
+let usuarioActual = null;
+
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  usuarioActual = await res.json();
+  document.getElementById('user-label').textContent = `${usuarioActual.nombre} · ${ROLES_LABEL[usuarioActual.rol]||usuarioActual.rol}`;
+  const linkStyle = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  const nav = document.getElementById('nav-links');
+  nav.innerHTML = `<a href="/" style="${linkStyle}">← Órdenes</a>`;
+  if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/usuarios.html" style="${linkStyle}">⚙ Usuarios</a>`;
+  if (!PUEDE_EDITAR_CLIENTES.includes(usuarioActual.rol)) {
+    document.querySelector('.btn-primary[onclick="nuevoCliente()"]')?.remove();
+  }
+}
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+initSesion();
+cargarClientes();
+</script>
+</body>
+</html>
