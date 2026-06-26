@@ -11,6 +11,7 @@
     { "src": "/usuarios.html", "dest": "/public/usuarios.html" },
     { "src": "/calculadora.html", "dest": "/public/calculadora.html" },
     { "src": "/calculadora-hp.html", "dest": "/public/calculadora-hp.html" },
+    { "src": "/calculadora-flexo.html", "dest": "/public/calculadora-flexo.html" },
     { "src": "/", "dest": "/public/index.html" }
   ]
 }
