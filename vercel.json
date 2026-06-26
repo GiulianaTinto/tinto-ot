@@ -9,6 +9,8 @@
     { "src": "/login", "dest": "/public/login.html" },
     { "src": "/clientes.html", "dest": "/public/clientes.html" },
     { "src": "/usuarios.html", "dest": "/public/usuarios.html" },
+    { "src": "/calculadora.html", "dest": "/public/calculadora.html" },
+    { "src": "/calculadora-hp.html", "dest": "/public/calculadora-hp.html" },
     { "src": "/", "dest": "/public/index.html" }
   ]
 }
