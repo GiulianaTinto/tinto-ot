@@ -1227,6 +1227,7 @@ async function initSesion() {
   const nav = document.getElementById('nav-links');
   const linkStyle = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
   nav.innerHTML = `<a href="/clientes.html" style="${linkStyle}">👥 Clientes</a>`;
+  nav.innerHTML += `<a href="/calculadora.html" style="${linkStyle}">🧮 Calculadoras</a>`;
   if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/usuarios.html" style="${linkStyle}">⚙ Usuarios</a>`;
 
   // Ocultar botón Nueva OT si no tiene permiso

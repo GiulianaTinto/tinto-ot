@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Calculadora HP</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Georgia, serif; background: #faf6ef; color: #2a2218; min-height: 100vh; }
+
+  header {
+    background: #1a1208; padding: 18px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #c9a96e;
+  }
+  .header-left .sub { font-size: 11px; color: #c9a96e; letter-spacing: 0.15em; text-transform: uppercase; font-family: Arial, sans-serif; margin-bottom: 4px; }
+  .header-left .titulo { font-size: 20px; font-weight: 700; color: #f5f0e8; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .btn-config {
+    background: transparent; border: 1px solid #c9a96e; border-radius: 6px;
+    padding: 7px 14px; font-size: 12px; color: #c9a96e; cursor: pointer;
+    font-family: Georgia, serif; letter-spacing: 0.05em;
+  }
+  .btn-config.active { background: #c9a96e; color: #1a1208; }
+  .btn-back { color: #c9a96e; text-decoration: none; font-size: 13px; font-family: Arial, sans-serif; }
+  .btn-back:hover { color: #f5f0e8; }
+  .user-label { font-size: 12px; color: #8a7060; font-family: Arial, sans-serif; }
+
+  .main { max-width: 860px; margin: 0 auto; padding: 28px 24px; }
+
+  .card {
+    background: #fffdf9; border: 1px solid #e0d5c5;
+    border-radius: 12px; padding: 20px 24px; margin-bottom: 20px;
+  }
+  .card-dark { background: #1a1208; border: none; }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: #8a7a6a;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 16px; font-family: Arial, sans-serif;
+  }
+  .card-dark .card-title { color: #c9a96e; letter-spacing: 0.1em; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+  .grid-config { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+  .campo { display: flex; flex-direction: column; gap: 4px; }
+  .campo label { font-size: 11px; font-weight: 500; color: #8a7a6a; text-transform: uppercase; letter-spacing: 0.06em; font-family: Arial, sans-serif; }
+  .campo .hint { font-size: 11px; color: #b0a090; font-family: Arial, sans-serif; }
+  .campo input {
+    background: #fffdf9; border: 1px solid #e0d5c5; border-radius: 6px;
+    padding: 8px 10px; font-size: 14px; color: #2a2218;
+    outline: none; width: 100%; font-family: Georgia, serif;
+  }
+  .campo input:focus { border-color: #c9a96e; box-shadow: 0 0 0 2px rgba(201,169,110,0.15); }
+
+  /* Resultados */
+  .metrics { display: flex; flex-wrap: wrap; gap: 10px; }
+  .metric {
+    background: #fffdf9; border: 1px solid #e0d5c5;
+    border-radius: 10px; padding: 14px 16px; text-align: center;
+    flex: 1; min-width: 110px;
+  }
+  .metric.accent { background: #0f0b05; border: none; }
+  .metric-label { font-size: 11px; color: #8a7a6a; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; margin-bottom: 6px; font-family: Arial, sans-serif; }
+  .metric.accent .metric-label { color: #c9a96e; }
+  .metric-value { font-size: 22px; font-weight: 700; color: #2a2218; line-height: 1.1; }
+  .metric.accent .metric-value { color: #f0c97a; font-size: 28px; }
+  .metric-unit { font-size: 11px; color: #b0a090; margin-top: 3px; font-family: Arial, sans-serif; }
+  .metric.accent .metric-unit { color: #8a7a50; }
+
+  /* Desglose */
+  .desglose-fila {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid #f0e8d8; font-size: 13px;
+    font-family: Arial, sans-serif;
+  }
+  .desglose-fila:last-child { border-bottom: none; }
+  .desglose-fila .lbl { color: #6a5a4a; }
+  .desglose-fila .val { color: #4a3a2a; font-variant-numeric: tabular-nums; }
+  .desglose-fila.negrita .lbl, .desglose-fila.negrita .val { font-weight: 600; color: #2a2218; }
+
+  /* Fórmula */
+  .formula {
+    background: #f5f0e4; border: 1px solid #d0c0a0; border-radius: 10px;
+    padding: 14px 18px; font-size: 12px; color: #6a5a3a;
+    font-family: monospace; line-height: 2;
+  }
+  .formula-titulo { font-family: Arial, sans-serif; font-size: 12px; font-weight: 600; color: #4a3a1a; display: block; margin-bottom: 4px; }
+
+  #config-panel { display: none; }
+  #config-panel.visible { display: block; }
+  #resultados { display: none; }
+  #resultados.visible { display: block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="sub">Tinto Labels — Mendoza</div>
+    <div class="titulo">Calculadora metros OT Digital</div>
+  </div>
+  <div class="header-right">
+    <a href="/calculadora.html" class="btn-back">← Calculadoras</a>
+    <span class="user-label" id="user-label"></span>
+    <button class="btn-config" id="btn-config" onclick="toggleConfig()">⚙ Config planta</button>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Config planta -->
+  <div id="config-panel">
+    <div class="card" style="border-color:#c9a96e; margin-bottom:20px">
+      <div class="card-title">Parámetros de planta</div>
+      <div class="grid grid-config">
+        <div class="campo">
+          <label>Arranque inicio (m)</label>
+          <input type="number" id="mInicio" value="10" min="0" step="0.5" oninput="recalcular()">
+        </div>
+        <div class="campo">
+          <label>Arranque final (m)</label>
+          <input type="number" id="mFinal" value="10" min="0" step="0.5" oninput="recalcular()">
+        </div>
+        <div class="campo">
+          <label>Merma adicional (%)</label>
+          <input type="number" id="mermaPct" value="3" min="0" max="100" step="0.5" oninput="recalcular()">
+        </div>
+        <div class="campo">
+          <label>Margen sustrato (mm)</label>
+          <input type="number" id="margenSustrato" value="12" min="0" step="1" oninput="recalcular()">
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:#b0a090;font-family:Arial,sans-serif">
+        Cilindro fijo: 980 mm · 0.98 m por frame
+      </div>
+    </div>
+  </div>
+
+  <!-- Datos del troquel -->
+  <div class="card">
+    <div class="card-title">Medidas del troquel</div>
+    <div class="grid">
+      <div class="campo">
+        <label>Ancho etiqueta (mm)</label>
+        <span class="hint">dirección de avance</span>
+        <input type="number" id="anchoEtiq" value="110" min="1" step="0.1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Alto etiqueta (mm)</label>
+        <input type="number" id="altoEtiq" value="85" min="1" step="0.1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Gap avance (mm)</label>
+        <input type="number" id="gapAvance" value="4.3" min="0" step="0.1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Gap alto (mm)</label>
+        <input type="number" id="gapAlto" value="4" min="0" step="0.1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Columnas</label>
+        <input type="number" id="columnas" value="2" min="1" step="1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Cantidad de etiquetas</label>
+        <input type="number" id="cantidad" value="1324" min="1" step="1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Pruebas adicionales / PDM (m)</label>
+        <input type="number" id="mPruebas" value="0" min="0" step="0.5" oninput="recalcular()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Resultados -->
+  <div id="resultados">
+    <div class="card card-dark" style="margin-bottom:16px">
+      <div class="card-title">Resultado</div>
+      <div class="metrics" id="metrics-top"></div>
+      <div class="metrics" style="margin-top:10px" id="metrics-bottom"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Desglose del scrap</div>
+      <div id="desglose"></div>
+    </div>
+
+    <div class="formula" id="formula"></div>
+  </div>
+
+</div>
+
+<script>
+const CILINDRO_MM = 980;
+const M_POR_FRAME = 0.98;
+
+function anchoEstandar(mm) {
+  if (mm <= 200) return 200;
+  if (mm <= 250) return 250;
+  if (mm <= 280) return 280;
+  return 330;
+}
+
+function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+function vi(id) { return parseInt(document.getElementById(id).value) || 0; }
+function n(val, d = 2) { return val !== undefined ? val.toFixed(d) : '-'; }
+
+function recalcular() {
+  const anchoEtiq   = v('anchoEtiq');
+  const altoEtiq    = v('altoEtiq');
+  const gapAvance   = v('gapAvance');
+  const gapAlto     = v('gapAlto');
+  const columnas    = vi('columnas') || 1;
+  const cantidad    = vi('cantidad');
+  const mPruebas    = v('mPruebas');
+  const mInicio     = v('mInicio');
+  const mFinal      = v('mFinal');
+  const mermaPct    = v('mermaPct');
+  const margenSustrato = v('margenSustrato');
+
+  if (!anchoEtiq || !gapAvance || !cantidad) {
+    document.getElementById('resultados').classList.remove('visible');
+    return;
+  }
+
+  const anchoCalculado = (columnas * altoEtiq) + ((columnas - 1) * gapAlto) + margenSustrato;
+  const anchoSustrato  = anchoEstandar(anchoCalculado);
+  const pasoMm         = anchoEtiq + gapAvance;
+  const filasPorFrame  = Math.floor(CILINDRO_MM / pasoMm);
+  const etiqPorFrame   = filasPorFrame * columnas;
+  const framesNetos    = Math.ceil(cantidad / etiqPorFrame);
+  const mProductivos   = framesNetos * M_POR_FRAME;
+  const mMerma         = mProductivos * (mermaPct / 100);
+  const mScrap         = mInicio + mFinal + mMerma + mPruebas;
+  const mTotal         = mProductivos + mScrap;
+  const pctScrap       = (mScrap / mTotal) * 100;
+
+  // Metrics top
+  document.getElementById('metrics-top').innerHTML = `
+    <div class="metric"><div class="metric-label">Ancho sustrato</div><div class="metric-value">${anchoSustrato}</div><div class="metric-unit">mm estándar</div></div>
+    <div class="metric accent"><div class="metric-label">Total metros lineales</div><div class="metric-value">${n(mTotal)}</div><div class="metric-unit">metros</div></div>
+  `;
+
+  // Metrics bottom
+  document.getElementById('metrics-bottom').innerHTML = `
+    <div class="metric"><div class="metric-label">Metros productivos</div><div class="metric-value">${n(mProductivos)}</div><div class="metric-unit">metros</div></div>
+    <div class="metric"><div class="metric-label">Scrap total</div><div class="metric-value">${n(mScrap)}</div><div class="metric-unit">${n(pctScrap, 1)}% del total</div></div>
+    <div class="metric"><div class="metric-label">Paso lineal</div><div class="metric-value">${n(pasoMm, 1)}</div><div class="metric-unit">mm</div></div>
+    <div class="metric"><div class="metric-label">Filas por frame</div><div class="metric-value">${filasPorFrame}</div><div class="metric-unit">PISO(980/${n(pasoMm,1)})</div></div>
+    <div class="metric"><div class="metric-label">Etiq. por frame</div><div class="metric-value">${etiqPorFrame}</div><div class="metric-unit">${filasPorFrame} filas × ${columnas} col</div></div>
+    <div class="metric"><div class="metric-label">Frames necesarios</div><div class="metric-value">${framesNetos.toLocaleString('es-AR')}</div><div class="metric-unit">TECHO(${cantidad}/${etiqPorFrame})</div></div>
+  `;
+
+  // Desglose
+  document.getElementById('desglose').innerHTML = `
+    <div class="desglose-fila"><span class="lbl">Arranque inicio</span><span class="val">${n(mInicio)} m</span></div>
+    <div class="desglose-fila"><span class="lbl">Arranque final</span><span class="val">${n(mFinal)} m</span></div>
+    <div class="desglose-fila"><span class="lbl">Merma ${mermaPct}% sobre productivos</span><span class="val">${n(mMerma)} m</span></div>
+    <div class="desglose-fila"><span class="lbl">Pruebas adicionales / PDM</span><span class="val">${n(mPruebas)} m</span></div>
+    <div class="desglose-fila negrita"><span class="lbl">Total scrap</span><span class="val">${n(mScrap)} m</span></div>
+  `;
+
+  // Fórmula
+  document.getElementById('formula').innerHTML = `
+    <span class="formula-titulo">Fórmula aplicada</span>
+    paso_mm = ${anchoEtiq} + ${gapAvance} = ${n(pasoMm, 1)} mm<br>
+    filas_frame = PISO(980 / ${n(pasoMm, 1)}) = ${filasPorFrame}<br>
+    etiq_frame = ${filasPorFrame} × ${columnas} = ${etiqPorFrame}<br>
+    frames = TECHO(${cantidad} / ${etiqPorFrame}) = ${framesNetos}<br>
+    m_productivos = ${framesNetos} × 0.98 = ${n(mProductivos)} m<br>
+    m_scrap = ${n(mInicio)} + ${n(mFinal)} + ${n(mMerma)} + ${n(mPruebas)} = ${n(mScrap)} m<br>
+    <strong style="color:#2a1a00">m_total = ${n(mProductivos)} + ${n(mScrap)} = ${n(mTotal)} m</strong>
+  `;
+
+  document.getElementById('resultados').classList.add('visible');
+}
+
+function toggleConfig() {
+  const panel = document.getElementById('config-panel');
+  const btn = document.getElementById('btn-config');
+  const visible = panel.classList.toggle('visible');
+  btn.classList.toggle('active', visible);
+  btn.textContent = visible ? '✓ Config' : '⚙ Config planta';
+}
+
+async function init() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const me = await res.json();
+  const ROLES = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+  document.getElementById('user-label').textContent = `${me.nombre} · ${ROLES[me.rol]||me.rol}`;
+}
+
+init();
+recalcular();
+</script>
+</body>
+</html>

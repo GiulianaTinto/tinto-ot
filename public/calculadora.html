@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Calculadoras de Papel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; min-height: 100vh; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  .user-info { display: flex; align-items: center; gap: 16px; }
+  .user-info a { color: #aaa; text-decoration: none; font-size: 14px; }
+  .user-info a:hover { color: white; }
+  .user-info span { font-size: 13px; color: #ccc; }
+  .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+
+  .container { max-width: 700px; margin: 60px auto; padding: 0 24px; }
+  h2 { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+  p { color: #666; margin-bottom: 40px; font-size: 15px; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .card {
+    background: white; border-radius: 14px; padding: 32px 28px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08); cursor: pointer;
+    border: 2px solid transparent; transition: all 0.2s; text-decoration: none; color: inherit;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .card:hover { border-color: #c0392b; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.12); }
+  .card-icon { font-size: 36px; }
+  .card-title { font-size: 18px; font-weight: 700; color: #1a1a2e; }
+  .card-desc { font-size: 13px; color: #777; line-height: 1.5; }
+  .card-badge { display: inline-block; background: #eef2ff; color: #3730a3; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 12px; width: fit-content; }
+  .card-badge.soon { background: #f3f4f6; color: #9ca3af; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧮 Calculadoras de Papel</h1>
+  <div class="user-info">
+    <a href="/">← Órdenes</a>
+    <span id="user-label"></span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  </div>
+</header>
+
+<div class="container">
+  <h2>Elegí la calculadora</h2>
+  <p>Calculá los metros de sustrato necesarios para cada tipo de impresión.</p>
+
+  <div class="cards">
+    <a href="/calculadora-hp.html" class="card">
+      <div class="card-icon">🖨️</div>
+      <div class="card-badge">Disponible</div>
+      <div class="card-title">Calculadora HP</div>
+      <div class="card-desc">Impresión digital HP Indigo. Calcula metros lineales, frames, ancho de sustrato y scrap para OT digitales.</div>
+    </a>
+    <div class="card" style="opacity:0.6;cursor:default">
+      <div class="card-icon">⚙️</div>
+      <div class="card-badge soon">Próximamente</div>
+      <div class="card-title">Calculadora Flexo</div>
+      <div class="card-desc">Impresión flexográfica. Calcula metros, repeticiones y consumo de sustrato para trabajos en bobina.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function init() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const me = await res.json();
+  const ROLES = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+  document.getElementById('user-label').textContent = `${me.nombre} · ${ROLES[me.rol]||me.rol}`;
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+init();
+</script>
+</body>
+</html>
