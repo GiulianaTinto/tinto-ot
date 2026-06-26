@@ -116,19 +116,19 @@
       <div class="grid grid-config">
         <div class="campo">
           <label>Arranque inicio (m)</label>
-          <input type="number" id="mInicio" value="10" min="0" step="0.5" oninput="recalcular()">
+          <input type="number" id="mInicio" min="0" step="0.5" oninput="recalcular()">
         </div>
         <div class="campo">
           <label>Arranque final (m)</label>
-          <input type="number" id="mFinal" value="10" min="0" step="0.5" oninput="recalcular()">
+          <input type="number" id="mFinal" min="0" step="0.5" oninput="recalcular()">
         </div>
         <div class="campo">
           <label>Merma adicional (%)</label>
-          <input type="number" id="mermaPct" value="3" min="0" max="100" step="0.5" oninput="recalcular()">
+          <input type="number" id="mermaPct" min="0" max="100" step="0.5" oninput="recalcular()">
         </div>
         <div class="campo">
           <label>Margen sustrato (mm)</label>
-          <input type="number" id="margenSustrato" value="12" min="0" step="1" oninput="recalcular()">
+          <input type="number" id="margenSustrato" min="0" step="1" oninput="recalcular()">
         </div>
       </div>
       <div style="margin-top:12px;font-size:12px;color:#b0a090;font-family:Arial,sans-serif">
@@ -144,31 +144,31 @@
       <div class="campo">
         <label>Ancho etiqueta (mm)</label>
         <span class="hint">dirección de avance</span>
-        <input type="number" id="anchoEtiq" value="110" min="1" step="0.1" oninput="recalcular()">
+        <input type="number" id="anchoEtiq" min="1" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Alto etiqueta (mm)</label>
-        <input type="number" id="altoEtiq" value="85" min="1" step="0.1" oninput="recalcular()">
+        <input type="number" id="altoEtiq" min="1" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Gap avance (mm)</label>
-        <input type="number" id="gapAvance" value="4.3" min="0" step="0.1" oninput="recalcular()">
+        <input type="number" id="gapAvance" min="0" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Gap alto (mm)</label>
-        <input type="number" id="gapAlto" value="4" min="0" step="0.1" oninput="recalcular()">
+        <input type="number" id="gapAlto" min="0" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Columnas</label>
-        <input type="number" id="columnas" value="2" min="1" step="1" oninput="recalcular()">
+        <input type="number" id="columnas" min="1" step="1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Cantidad de etiquetas</label>
-        <input type="number" id="cantidad" value="1324" min="1" step="1" oninput="recalcular()">
+        <input type="number" id="cantidad" min="1" step="1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Pruebas adicionales / PDM (m)</label>
-        <input type="number" id="mPruebas" value="0" min="0" step="0.5" oninput="recalcular()">
+        <input type="number" id="mPruebas" min="0" step="0.5" oninput="recalcular()">
       </div>
     </div>
   </div>
@@ -293,7 +293,6 @@ async function init() {
 }
 
 init();
-recalcular();
 </script>
 </body>
 </html>

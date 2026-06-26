@@ -109,20 +109,20 @@
     <div class="grid">
       <div class="campo">
         <label>Cantidad de etiquetas</label>
-        <input type="number" id="qty" value="10000" min="1" step="1" oninput="recalcular()">
+        <input type="number" id="qty" min="1" step="1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Ancho etiqueta (mm)</label>
         <span class="hint">dirección de avance</span>
-        <input type="number" id="ancho_etiq" value="100" min="1" step="0.1" oninput="recalcular()">
+        <input type="number" id="ancho_etiq" min="1" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Gap avance (mm)</label>
-        <input type="number" id="gap_avance" value="3" min="0" step="0.1" oninput="recalcular()">
+        <input type="number" id="gap_avance" min="0" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Filas</label>
-        <input type="number" id="filas" value="1" min="1" step="1" oninput="recalcular()">
+        <input type="number" id="filas" min="1" step="1" oninput="recalcular()">
       </div>
     </div>
 
@@ -131,12 +131,12 @@
       <div class="campo">
         <label>Setup (m)</label>
         <span class="hint">metros de arranque</span>
-        <input type="number" id="setup" value="15" min="0" step="0.5" oninput="recalcular()">
+        <input type="number" id="setup" min="0" step="0.5" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Pie (m)</label>
         <span class="hint">metros de cierre</span>
-        <input type="number" id="pie" value="5" min="0" step="0.5" oninput="recalcular()">
+        <input type="number" id="pie" min="0" step="0.5" oninput="recalcular()">
       </div>
     </div>
 
@@ -144,17 +144,17 @@
     <div class="grid">
       <div class="campo">
         <label>Metros por bobina de sustrato</label>
-        <input type="number" id="bob_sust" value="1000" min="1" step="50" oninput="recalcular()">
+        <input type="number" id="bob_sust" min="1" step="50" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Metros de folia usados</label>
         <span class="hint">0 si no aplica</span>
-        <input type="number" id="metros_folia" value="0" min="0" step="1" oninput="recalcular()">
+        <input type="number" id="metros_folia" min="0" step="1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Metros por bobina de folia</label>
         <span class="hint">0 si no aplica</span>
-        <input type="number" id="bob_folia" value="0" min="0" step="50" oninput="recalcular()">
+        <input type="number" id="bob_folia" min="0" step="50" oninput="recalcular()">
       </div>
     </div>
   </div>
@@ -285,7 +285,6 @@ async function init() {
 }
 
 init();
-recalcular();
 </script>
 </body>
 </html>
