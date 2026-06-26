@@ -126,7 +126,13 @@
       </div>
       <div class="campo">
         <label>Gap alto (mm)</label>
+        <span class="hint">entre filas</span>
         <input type="number" id="gap_alto" min="0" step="0.1" oninput="recalcular()">
+      </div>
+      <div class="campo">
+        <label>Gap extremos (mm)</label>
+        <span class="hint">cada lado del sustrato</span>
+        <input type="number" id="gap_extremos" min="0" step="0.1" oninput="recalcular()">
       </div>
       <div class="campo">
         <label>Filas</label>
@@ -225,13 +231,20 @@ function n(val, d = 2) { return val !== undefined ? Number(val).toFixed(d) : '-'
 function recalcular() {
   const qty          = vi('qty');
   const ancho_etiq   = v('ancho_etiq');
+  const alto_etiq    = v('alto_etiq');
   const gap_avance   = v('gap_avance');
+  const gap_alto     = v('gap_alto');
+  const gap_extremos = v('gap_extremos');
   const filas        = vi('filas') || 1;
   const setup        = v('setup');
   const pie          = v('pie');
   const bob_sust     = v('bob_sust') || 1;
   const metros_folia = v('metros_folia');
   const bob_folia    = v('bob_folia');
+
+  const anchoSustrato = alto_etiq
+    ? (filas * alto_etiq) + ((filas - 1) * gap_alto) + (2 * gap_extremos)
+    : null;
 
   if (!qty || !ancho_etiq) {
     document.getElementById('resultados').classList.remove('visible');
@@ -244,9 +257,14 @@ function recalcular() {
   const etiqPorFila = Math.ceil((qty + r.etiqExtra) / filas);
   const scrapArranque = setup + pie;
 
+  const anchoHtml = anchoSustrato !== null
+    ? `<div class="metric"><div class="metric-label">Ancho sustrato</div><div class="metric-value">${Math.round(anchoSustrato)}</div><div class="metric-unit">mm</div></div>`
+    : '';
+
   document.getElementById('metrics-top').innerHTML = `
     <div class="metric accent"><div class="metric-label">Total metros lineales</div><div class="metric-value">${r.mTotal.toLocaleString('es-AR')}</div><div class="metric-unit">metros</div></div>
     <div class="metric"><div class="metric-label">Bobinas necesarias</div><div class="metric-value">${r.bobNec}</div><div class="metric-unit">de ${bob_sust} m c/u</div></div>
+    ${anchoHtml}
   `;
 
   document.getElementById('metrics-bottom').innerHTML = `
@@ -270,9 +288,13 @@ function recalcular() {
     <div class="desglose-fila negrita"><span class="lbl">Total metros</span><span class="val">${r.mTotal.toLocaleString('es-AR')} m</span></div>
   `;
 
+  const anchoFormulaHtml = anchoSustrato !== null
+    ? `ancho_sustrato = (${filas} × ${alto_etiq}) + (${filas - 1} × ${gap_alto}) + (2 × ${gap_extremos}) = ${Math.round(anchoSustrato)} mm<br>`
+    : '';
+
   document.getElementById('formula').innerHTML = `
     <span class="formula-titulo">Fórmula aplicada</span>
-    etiq_extra = TECHO(${qty} × ${r.pct}%) = ${r.etiqExtra}<br>
+    ${anchoFormulaHtml}etiq_extra = TECHO(${qty} × ${r.pct}%) = ${r.etiqExtra}<br>
     total_etiq = ${qty} + ${r.etiqExtra} = ${qty + r.etiqExtra}<br>
     pitch = (${ancho_etiq} + ${gap_avance}) / 1000 = ${n(pitch, 4)} m<br>
     etiq_por_fila = TECHO(${qty + r.etiqExtra} / ${filas}) = ${etiqPorFila}<br>
