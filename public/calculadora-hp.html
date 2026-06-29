@@ -184,8 +184,11 @@
         <input type="number" id="cantidad" min="1" step="1" oninput="recalcular()">
       </div>
       <div class="campo">
-        <label>Pruebas adicionales / PDM (m)</label>
-        <input type="number" id="mPruebas" min="0" step="0.5" oninput="recalcular()">
+        <label>Pruebas adicionales / PDM</label>
+        <select id="mPruebas" onchange="recalcular()" style="background:#fffdf9;border:1px solid #e0d5c5;border-radius:6px;padding:8px 10px;font-size:14px;color:#2a2218;outline:none;width:100%;font-family:Georgia,serif;">
+          <option value="no">No</option>
+          <option value="si">Sí</option>
+        </select>
       </div>
     </div>
   </div>
@@ -230,7 +233,11 @@ function recalcular() {
   const gapAlto     = v('gapAlto');
   const columnas    = vi('columnas') || 1;
   const cantidad    = vi('cantidad');
-  const mPruebas    = v('mPruebas');
+  const pruebas     = document.getElementById('mPruebas').value;
+  const tipoEtiq    = document.getElementById('tipoEtiqueta').value;
+  const mPruebas    = pruebas === 'si'
+    ? (['frente', 'collarin'].includes(tipoEtiq) ? 60 : 30)
+    : 0;
   const mInicio     = v('mInicio');
   const mFinal      = v('mFinal');
   const mermaPct    = v('mermaPct');
@@ -274,7 +281,7 @@ function recalcular() {
     <div class="desglose-fila"><span class="lbl">Arranque inicio</span><span class="val">${n(mInicio)} m</span></div>
     <div class="desglose-fila"><span class="lbl">Arranque final</span><span class="val">${n(mFinal)} m</span></div>
     <div class="desglose-fila"><span class="lbl">Merma ${mermaPct}% sobre productivos</span><span class="val">${n(mMerma)} m</span></div>
-    <div class="desglose-fila"><span class="lbl">Pruebas adicionales / PDM</span><span class="val">${n(mPruebas)} m</span></div>
+    <div class="desglose-fila"><span class="lbl">Pruebas adicionales / PDM</span><span class="val">${pruebas === 'si' ? n(mPruebas) + ' m' : '—'}</span></div>
     <div class="desglose-fila negrita"><span class="lbl">Total scrap</span><span class="val">${n(mScrap)} m</span></div>
   `;
 
