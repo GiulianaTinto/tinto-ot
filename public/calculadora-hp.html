@@ -246,6 +246,8 @@ function recalcular() {
   const mFinal      = v('mFinal');
   const mermaPct    = v('mermaPct');
   const margenSustrato = v('margenSustrato');
+  const motivos     = vi('motivos') || 1;
+  const mMotivos    = motivos * 6;
 
   if (!anchoEtiq || !gapAvance || !cantidad) {
     document.getElementById('resultados').classList.remove('visible');
@@ -260,7 +262,7 @@ function recalcular() {
   const framesNetos    = Math.ceil(cantidad / etiqPorFrame);
   const mProductivos   = framesNetos * M_POR_FRAME;
   const mMerma         = mProductivos * (mermaPct / 100);
-  const mScrap         = mInicio + mFinal + mMerma + mPruebas;
+  const mScrap         = mInicio + mFinal + mMerma + mPruebas + mMotivos;
   const mTotal         = mProductivos + mScrap;
   const pctScrap       = (mScrap / mTotal) * 100;
 
@@ -286,6 +288,7 @@ function recalcular() {
     <div class="desglose-fila"><span class="lbl">Arranque final</span><span class="val">${n(mFinal)} m</span></div>
     <div class="desglose-fila"><span class="lbl">Merma ${mermaPct}% sobre productivos</span><span class="val">${n(mMerma)} m</span></div>
     <div class="desglose-fila"><span class="lbl">Pruebas adicionales / PDM</span><span class="val">${pruebas === 'si' ? n(mPruebas) + ' m' : '—'}</span></div>
+    <div class="desglose-fila"><span class="lbl">Motivos (${motivos} × 6 m)</span><span class="val">${n(mMotivos)} m</span></div>
     <div class="desglose-fila negrita"><span class="lbl">Total scrap</span><span class="val">${n(mScrap)} m</span></div>
   `;
 
