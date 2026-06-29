@@ -140,6 +140,19 @@
   <!-- Datos del troquel -->
   <div class="card">
     <div class="card-title">Medidas del troquel</div>
+    <div class="grid" style="margin-bottom:14px">
+      <div class="campo">
+        <label>Tipo de etiqueta</label>
+        <select id="tipoEtiqueta" onchange="recalcular()" style="background:#fffdf9;border:1px solid #e0d5c5;border-radius:6px;padding:8px 10px;font-size:14px;color:#2a2218;outline:none;width:100%;font-family:Georgia,serif;">
+          <option value="">— Seleccioná —</option>
+          <option value="frente">Frente</option>
+          <option value="contra">Contra</option>
+          <option value="medalla">Medalla</option>
+          <option value="collarin">Collarín</option>
+          <option value="otro">Otro</option>
+        </select>
+      </div>
+    </div>
     <div class="grid">
       <div class="campo">
         <label>Ancho etiqueta (mm)</label>
