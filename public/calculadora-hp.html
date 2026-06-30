@@ -128,7 +128,8 @@
         </div>
         <div class="campo">
           <label>Margen sustrato (mm)</label>
-          <input type="number" id="margenSustrato" value="18" min="0" step="1" oninput="recalcular()">
+          <input type="number" id="margenSustrato" value="22" min="0" step="1" readonly style="background:#f0ebe0;color:#8a7a6a;cursor:default;">
+          <span class="hint">Auto: 22 mm (Contra: 16 mm)</span>
         </div>
         <div class="campo">
           <label>Hojas de calce (m)</label>
@@ -151,7 +152,7 @@
     <div class="grid" style="margin-bottom:14px">
       <div class="campo">
         <label>Tipo de etiqueta</label>
-        <select id="tipoEtiqueta" onchange="recalcular()" style="background:#fffdf9;border:1px solid #e0d5c5;border-radius:6px;padding:8px 10px;font-size:14px;color:#2a2218;outline:none;width:100%;font-family:Georgia,serif;">
+        <select id="tipoEtiqueta" onchange="actualizarMargen(); recalcular()" style="background:#fffdf9;border:1px solid #e0d5c5;border-radius:6px;padding:8px 10px;font-size:14px;color:#2a2218;outline:none;width:100%;font-family:Georgia,serif;">
           <option value="">— Seleccioná —</option>
           <option value="frente">Frente</option>
           <option value="contra">Contra</option>
@@ -245,7 +246,7 @@ function recalcular() {
   const mInicio     = v('mInicio');
   const mFinal      = v('mFinal');
   const mermaPct    = v('mermaPct');
-  const margenSustrato = v('margenSustrato');
+  const margenSustrato = tipoEtiq === 'contra' ? 16 : 22;
   const motivos     = vi('motivos') || 1;
   const mMotivos    = motivos * 6;
 
@@ -305,6 +306,11 @@ function recalcular() {
   `;
 
   document.getElementById('resultados').classList.add('visible');
+}
+
+function actualizarMargen() {
+  const tipo = document.getElementById('tipoEtiqueta').value;
+  document.getElementById('margenSustrato').value = tipo === 'contra' ? 16 : 22;
 }
 
 function toggleConfig() {
