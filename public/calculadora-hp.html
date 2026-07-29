@@ -139,9 +139,17 @@
           <label>Motivos</label>
           <input type="number" id="motivos" value="1" min="1" step="1" oninput="recalcular()">
         </div>
+        <div class="campo">
+          <label>Calibración papel y color (m)</label>
+          <input type="number" id="mCalibracion" value="10" min="0" step="1" oninput="recalcular()">
+        </div>
+        <div class="campo">
+          <label>Intentos de impresión</label>
+          <input type="number" id="intentosImpresion" value="5" min="0" step="1" oninput="recalcular()">
+        </div>
       </div>
       <div style="margin-top:12px;font-size:12px;color:#b0a090;font-family:Arial,sans-serif">
-        Cilindro fijo: 980 mm · 0.98 m por frame
+        Cilindro fijo: 980 mm · 0.98 m por frame · 6 m por intento de impresión
       </div>
     </div>
   </div>
@@ -219,6 +227,7 @@
 <script>
 const CILINDRO_MM = 980;
 const M_POR_FRAME = 0.98;
+const M_POR_INTENTO = 6;
 
 function anchoEstandar(mm) {
   if (mm <= 200) return 200;
@@ -249,6 +258,9 @@ function recalcular() {
   const margenSustrato = tipoEtiq === 'contra' ? 16 : 22;
   const motivos     = vi('motivos') || 1;
   const mMotivos    = motivos * 6;
+  const mCalibracion = v('mCalibracion');
+  const intentosImpresion = vi('intentosImpresion');
+  const mIntentos   = intentosImpresion * M_POR_INTENTO;
 
   if (!anchoEtiq || !gapAvance || !cantidad) {
     document.getElementById('resultados').classList.remove('visible');
@@ -263,7 +275,7 @@ function recalcular() {
   const framesNetos    = Math.ceil(cantidad / etiqPorFrame);
   const mProductivos   = framesNetos * M_POR_FRAME;
   const mMerma         = mProductivos * (mermaPct / 100);
-  const mScrap         = mInicio + mFinal + mMerma + mPruebas + mMotivos;
+  const mScrap         = mInicio + mFinal + mMerma + mPruebas + mMotivos + mCalibracion + mIntentos;
   const mTotal         = mProductivos + mScrap;
   const pctScrap       = (mScrap / mTotal) * 100;
 
@@ -290,6 +302,8 @@ function recalcular() {
     <div class="desglose-fila"><span class="lbl">Merma ${mermaPct}% sobre productivos</span><span class="val">${n(mMerma)} m</span></div>
     <div class="desglose-fila"><span class="lbl">Pruebas adicionales / PDM</span><span class="val">${pruebas === 'si' ? n(mPruebas) + ' m' : '—'}</span></div>
     <div class="desglose-fila"><span class="lbl">Motivos (${motivos} × 6 m)</span><span class="val">${n(mMotivos)} m</span></div>
+    <div class="desglose-fila"><span class="lbl">Calibración papel y color</span><span class="val">${n(mCalibracion)} m</span></div>
+    <div class="desglose-fila"><span class="lbl">Intentos de impresión (${intentosImpresion} × ${M_POR_INTENTO} m)</span><span class="val">${n(mIntentos)} m</span></div>
     <div class="desglose-fila negrita"><span class="lbl">Total scrap</span><span class="val">${n(mScrap)} m</span></div>
   `;
 
@@ -301,7 +315,7 @@ function recalcular() {
     etiq_frame = ${filasPorFrame} × ${columnas} = ${etiqPorFrame}<br>
     frames = TECHO(${cantidad} / ${etiqPorFrame}) = ${framesNetos}<br>
     m_productivos = ${framesNetos} × 0.98 = ${n(mProductivos)} m<br>
-    m_scrap = ${n(mInicio)} + ${n(mFinal)} + ${n(mMerma)} + ${n(mPruebas)} = ${n(mScrap)} m<br>
+    m_scrap = ${n(mInicio)} + ${n(mFinal)} + ${n(mMerma)} + ${n(mPruebas)} + ${n(mMotivos)} + ${n(mCalibracion)} + ${n(mIntentos)} = ${n(mScrap)} m<br>
     <strong style="color:#2a1a00">m_total = ${n(mProductivos)} + ${n(mScrap)} = ${n(mTotal)} m</strong>
   `;
 
