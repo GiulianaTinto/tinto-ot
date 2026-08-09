@@ -271,20 +271,20 @@ function recalcular() {
   const scrapArranque = setup + pie;
 
   const anchoHtml = anchoSustrato !== null
-    ? `<div class="metric"><div class="metric-label">Ancho sustrato</div><div class="metric-value">${Math.round(anchoSustrato)}</div><div class="metric-unit">mm</div></div>`
+    ? `<div class="metric accent"><div class="metric-label">Ancho sustrato</div><div class="metric-value">${Math.round(anchoSustrato)}</div><div class="metric-unit">mm</div></div>`
     : '';
+
+  const mScrapTotal = scrapArranque + r.scrapSust + r.scrapFolia;
 
   document.getElementById('metrics-top').innerHTML = `
     <div class="metric accent"><div class="metric-label">Total metros lineales</div><div class="metric-value">${r.mTotal.toLocaleString('es-AR')}</div><div class="metric-unit">metros</div></div>
-    <div class="metric"><div class="metric-label">Bobinas necesarias</div><div class="metric-value">${r.bobNec}</div><div class="metric-unit">de ${bob_sust} m c/u</div></div>
     ${anchoHtml}
   `;
 
   document.getElementById('metrics-bottom').innerHTML = `
     <div class="metric"><div class="metric-label">Metros brutos</div><div class="metric-value">${r.mBrutos.toLocaleString('es-AR')}</div><div class="metric-unit">metros</div></div>
-    <div class="metric"><div class="metric-label">Etiquetas extra</div><div class="metric-value">${r.etiqExtra.toLocaleString('es-AR')}</div><div class="metric-unit">${r.pct}% por rango</div></div>
-    <div class="metric"><div class="metric-label">Pitch</div><div class="metric-value">${n(pitch * 1000, 1)}</div><div class="metric-unit">mm</div></div>
-    <div class="metric"><div class="metric-label">Etiq. por fila</div><div class="metric-value">${etiqPorFila.toLocaleString('es-AR')}</div><div class="metric-unit">TECHO(total/${filas} filas)</div></div>
+    <div class="metric"><div class="metric-label">Etiquetas adicionales</div><div class="metric-value">${r.etiqExtra.toLocaleString('es-AR')}</div><div class="metric-unit">${r.pct}% por rango</div></div>
+    <div class="metric"><div class="metric-label">Metros de scrap</div><div class="metric-value">${n(mScrapTotal)}</div><div class="metric-unit">metros</div></div>
   `;
 
   const foliaHtml = (metros_folia > 0 && bob_folia > 0)
