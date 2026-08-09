@@ -208,6 +208,9 @@
 
   <!-- Resultados -->
   <div id="resultados">
+    <div id="alerta-ancho" style="display:none;background:#5a1414;border:1px solid #c94b4b;border-radius:10px;padding:14px 18px;margin-bottom:16px;color:#f5c8c8;font-family:Arial,sans-serif;font-size:14px;font-weight:600;">
+      ⚠ Error en ancho de sustrato
+    </div>
     <div class="card card-dark" style="margin-bottom:16px">
       <div class="card-title">Resultado</div>
       <div class="metrics" id="metrics-top"></div>
@@ -269,6 +272,7 @@ function recalcular() {
 
   const anchoCalculado = (columnas * altoEtiq) + ((columnas - 1) * gapAlto) + margenSustrato;
   const anchoSustrato  = anchoEstandar(anchoCalculado);
+  document.getElementById('alerta-ancho').style.display = anchoCalculado > 330 ? 'block' : 'none';
   const pasoMm         = anchoEtiq + gapAvance;
   const filasPorFrame  = Math.floor(CILINDRO_MM / pasoMm);
   const etiqPorFrame   = filasPorFrame * columnas;
