@@ -278,7 +278,7 @@ function recalcular() {
   const filasPorFrame  = Math.floor(CILINDRO_MM / pasoMm);
   const etiqPorFrame   = filasPorFrame * columnas;
   const framesNetos    = Math.ceil(cantidad / etiqPorFrame);
-  const mProductivos   = framesNetos * M_POR_FRAME;
+  const mProductivos   = (anchoEtiq + gapAvance) * cantidad / columnas / 1000;
   const mMerma         = mProductivos * (mermaPct / 100);
   const mScrap         = mInicio + mFinal + mMerma + mPruebas + mMotivos + mCalibracion + mIntentos;
   const mTotal         = mProductivos + mScrap;
@@ -319,7 +319,7 @@ function recalcular() {
     filas_frame = PISO(980 / ${n(pasoMm, 1)}) = ${filasPorFrame}<br>
     etiq_frame = ${filasPorFrame} × ${columnas} = ${etiqPorFrame}<br>
     frames = TECHO(${cantidad} / ${etiqPorFrame}) = ${framesNetos}<br>
-    m_productivos = ${framesNetos} × 0.98 = ${n(mProductivos)} m<br>
+    m_productivos = (${anchoEtiq} + ${gapAvance}) × ${cantidad} / ${columnas} / 1000 = ${n(mProductivos)} m<br>
     m_scrap = ${n(mInicio)} + ${n(mFinal)} + ${n(mMerma)} + ${n(mPruebas)} + ${n(mMotivos)} + ${n(mCalibracion)} + ${n(mIntentos)} = ${n(mScrap)} m<br>
     <strong style="color:#2a1a00">m_total = ${n(mProductivos)} + ${n(mScrap)} = ${n(mTotal)} m</strong>
   `;
