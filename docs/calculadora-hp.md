@@ -92,17 +92,17 @@ El cilindro de la máquina mide 980 mm fijos; se calcula cuántas filas de etiqu
 etiquetasPorFrame = filasPorFrame × columnas
 ```
 
-**Paso 4 — Frames necesarios para todo el pedido:**
+**Paso 4 — Frames necesarios para todo el pedido (valor de referencia):**
 ```
 framesNetos = TECHO(cantidadEtiquetas / etiquetasPorFrame)
 ```
-Se redondea siempre hacia arriba: aunque sobre lugar en el último frame, igual hay que imprimirlo completo.
+Se redondea siempre hacia arriba: aunque sobre lugar en el último frame, igual hay que imprimirlo completo. Este valor, junto con `filasPorFrame` y `etiquetasPorFrame`, se sigue mostrando en pantalla como referencia técnica, pero ya no interviene en el cálculo de metros productivos.
 
 **Paso 5 — Metros productivos:**
 ```
-mProductivos = framesNetos × 0.98
+mProductivos = (anchoEtiqueta + gapAvance) × cantidadEtiquetas / columnas / 1000
 ```
-Cada frame equivale a 0.98 metros de sustrato impreso y aprovechable.
+Se calcula directamente a partir del paso lineal (ancho de etiqueta + gap de avance) multiplicado por la cantidad de etiquetas, dividido por la cantidad de columnas, y convertido de milímetros a metros (÷1000).
 
 ## 6. Cálculo del scrap (material que no es aprovechable)
 
@@ -143,7 +143,9 @@ Datos del pedido ─┬─→ margenSustrato (según tipo etiqueta)
                    │                            │
                    │                    (si > 330mm: advertencia)
                    │
-                   └─→ pasoMm ──→ filasPorFrame ──→ etiquetasPorFrame ──→ framesNetos ──→ mProductivos
+                   ├─→ pasoMm ──→ filasPorFrame ──→ etiquetasPorFrame ──→ framesNetos  (referencia, no interviene en mProductivos)
+                   │
+                   └─→ mProductivos = (anchoEtiqueta + gapAvance) × cantidad / columnas / 1000
                                                                                                 │
 Parámetros de planta ──────────────────────────────────────────────→ mScrap ←──────────────────┘
                                                                           │
