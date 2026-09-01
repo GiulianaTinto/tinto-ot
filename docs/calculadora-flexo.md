@@ -28,7 +28,7 @@ Esta calculadora determina cuántos **metros lineales de sustrato** se necesitan
 
 | Campo | Valor por defecto | Descripción |
 |---|---|---|
-| Metros por bobina de sustrato | 1800 m | largo de cada bobina de material virgen |
+| Metros por bobina de sustrato | 1500 m | largo de cada bobina de material virgen |
 | Metros de folia usados | 0 | 0 si el trabajo no lleva folia (estampado en frío) |
 | Metros por bobina de folia | 3000 m | 0 si no aplica |
 
