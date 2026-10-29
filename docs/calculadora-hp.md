@@ -14,6 +14,7 @@ Esta calculadora determina cuántos **metros lineales de sustrato** se necesitan
 | Columnas | cantidad de etiquetas una al lado de la otra |
 | Cantidad de etiquetas | cantidad total del pedido |
 | Pruebas adicionales / PDM | Sí / No |
+| Stamping / Serig. / Relieve | Sí / No — indica si la etiqueta lleva alguno de estos acabados; define el porcentaje de merma (ver sección 6) |
 
 ## 2. Parámetros de planta (configurables)
 
@@ -112,7 +113,7 @@ El scrap es la suma de siete componentes:
 |---|---|
 | Arranque inicio | valor fijo de planta (Hojas de calce inicio) |
 | Arranque final | valor fijo de planta (Hojas de calce final) |
-| Merma | `mProductivos × (mermaPct / 100)` — porcentaje sobre lo productivo |
+| Merma | `mProductivos × (mermaPct / 100)` — porcentaje sobre lo productivo; el `mermaPct` depende del acabado y la cantidad (ver tabla más abajo) |
 | Pruebas adicionales / PDM | si el usuario elige "Sí": 60 m si el tipo de etiqueta es Frente o Collarín, 30 m para el resto. Si elige "No": 0 |
 | Motivos | `motivos × 6 m` |
 | Calibración papel y color | valor fijo de planta (10 m por defecto) |
@@ -121,6 +122,17 @@ El scrap es la suma de siete componentes:
 ```
 mScrap = mInicio + mFinal + mMerma + mPruebas + mMotivos + mCalibracion + mIntentos
 ```
+
+**Porcentaje de merma (`mermaPct`):**
+
+| Stamping / Serig. / Relieve | Cantidad de etiquetas | Merma |
+|---|---|---|
+| No | cualquiera | valor de planta (3 % por defecto, editable en Config planta) |
+| Sí | ≤ 3.000 | 10 % |
+| Sí | > 3.000 y ≤ 30.000 | 7 % |
+| Sí | > 30.000 | valor de planta (3 % por defecto, editable en Config planta) |
+
+En los dos tramos automáticos (10 % y 7 %), el campo "Merma adicional (%)" del panel Config planta se muestra de solo lectura con el valor aplicado. En los demás casos es editable.
 
 ## 7. Resultado final
 
