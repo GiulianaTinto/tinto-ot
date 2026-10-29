@@ -124,7 +124,8 @@
         </div>
         <div class="campo">
           <label>Merma adicional (%)</label>
-          <input type="number" id="mermaPct" value="3" min="0" max="100" step="0.5" oninput="recalcular()">
+          <input type="number" id="mermaPct" value="3" min="0" max="100" step="0.5" oninput="mermaBase = v('mermaPct'); recalcular()">
+          <span class="hint" id="merma-hint"></span>
         </div>
         <div class="campo">
           <label>Margen sustrato (mm)</label>
@@ -239,6 +240,7 @@
 const CILINDRO_MM = 980;
 const M_POR_FRAME = 0.98;
 const M_POR_INTENTO = 6;
+let mermaBase = 3;
 
 function anchoEstandar(mm) {
   if (mm <= 200) return 200;
@@ -267,7 +269,19 @@ function recalcular() {
   const mInicio     = v('mInicio');
   const mFinal      = v('mFinal');
   const relieve     = document.getElementById('relieve').value === 'si';
-  const mermaPct    = relieve ? (cantidad <= 3000 ? 10 : 7) : v('mermaPct');
+  const mermaInput  = document.getElementById('mermaPct');
+  if (relieve) {
+    mermaInput.value = cantidad <= 3000 ? 10 : 7;
+    mermaInput.readOnly = true;
+    mermaInput.style.cssText = 'background:#f0ebe0;color:#8a7a6a;cursor:default;';
+    document.getElementById('merma-hint').textContent = 'Auto por relieve/stamping: 10% (≤ 3000 etiq.) o 7% (> 3000)';
+  } else {
+    mermaInput.value = mermaBase;
+    mermaInput.readOnly = false;
+    mermaInput.style.cssText = '';
+    document.getElementById('merma-hint').textContent = '';
+  }
+  const mermaPct    = v('mermaPct');
   const margenSustrato = tipoEtiq === 'contra' ? 16 : 22;
   const motivos     = vi('motivos') || 1;
   const mMotivos    = motivos * 6;
