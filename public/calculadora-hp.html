@@ -205,7 +205,7 @@
         </select>
       </div>
       <div class="campo">
-        <label>Relieve / Stamping</label>
+        <label>Stamping / Serig. / Relieve</label>
         <select id="relieve" onchange="recalcular()" style="background:#fffdf9;border:1px solid #e0d5c5;border-radius:6px;padding:8px 10px;font-size:14px;color:#2a2218;outline:none;width:100%;font-family:Georgia,serif;">
           <option value="no">No</option>
           <option value="si">Sí</option>
@@ -274,7 +274,7 @@ function recalcular() {
     mermaInput.value = cantidad <= 3000 ? 10 : 7;
     mermaInput.readOnly = true;
     mermaInput.style.cssText = 'background:#f0ebe0;color:#8a7a6a;cursor:default;';
-    document.getElementById('merma-hint').textContent = 'Auto por relieve/stamping: 10% (≤ 3000 etiq.) o 7% (> 3000)';
+    document.getElementById('merma-hint').textContent = 'Auto por stamping/serig./relieve: 10% (≤ 3000 etiq.) o 7% (> 3000)';
   } else {
     mermaInput.value = mermaBase;
     mermaInput.readOnly = false;
