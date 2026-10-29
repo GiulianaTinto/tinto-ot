@@ -203,6 +203,14 @@
           <option value="si">Sí</option>
         </select>
       </div>
+      <div class="campo">
+        <label>Relieve / Stamping</label>
+        <select id="relieve" onchange="recalcular()" style="background:#fffdf9;border:1px solid #e0d5c5;border-radius:6px;padding:8px 10px;font-size:14px;color:#2a2218;outline:none;width:100%;font-family:Georgia,serif;">
+          <option value="no">No</option>
+          <option value="si">Sí</option>
+        </select>
+        <span class="hint">Sí: merma 10% (≤ 3000 etiq.) o 7% (> 3000)</span>
+      </div>
     </div>
   </div>
 
@@ -258,7 +266,8 @@ function recalcular() {
     : 0;
   const mInicio     = v('mInicio');
   const mFinal      = v('mFinal');
-  const mermaPct    = v('mermaPct');
+  const relieve     = document.getElementById('relieve').value === 'si';
+  const mermaPct    = relieve ? (cantidad <= 3000 ? 10 : 7) : v('mermaPct');
   const margenSustrato = tipoEtiq === 'contra' ? 16 : 22;
   const motivos     = vi('motivos') || 1;
   const mMotivos    = motivos * 6;
