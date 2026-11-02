@@ -105,7 +105,7 @@
 
       <div class="seccion">Formato</div>
       <div class="form-grid">
-        <div class="form-group"><label>Troquel</label><select id="troquel_id"></select></div>
+        <div class="form-group"><label>Troquel</label><select id="troquel_id" onchange="aplicarTroquel()"></select></div>
         <div class="form-group"><label>Ancho (mm)</label><input type="number" step="any" id="ancho"></div>
         <div class="form-group"><label>Alto (mm)</label><input type="number" step="any" id="alto"></div>
         <div class="form-group"><label>Gap avance (mm)</label><input type="number" step="any" id="gap_avance"></div>
@@ -159,9 +159,10 @@ const BARNICES = ['Antifrote mate', 'Antifrote brillo', 'Antifrote semimate', 'S
 const SENTIDOS = ['1', '2', '3', '4'];
 const CAMPOS_TEXTO = ['marca','detalle','mercado','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','max_etiquetas_rollo','anada','cubicacion','alcohol'];
 const CAMPOS_SELECT = ['cliente_id','tipo_etiqueta','papel_id','papel_alt_id','liner','troquel_id','sentido_bobinado','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve_id'];
-const CATALOGO_DE = { papel_id:'papel', papel_alt_id:'papel', troquel_id:'troquel', serigrafia_id:'serigrafia', stamping_marca_id:'stamping_marca', stamping_cuno_id:'stamping_cuno', relieve_id:'relieve' };
+const CATALOGO_DE = { papel_id:'papel', papel_alt_id:'papel', serigrafia_id:'serigrafia', stamping_marca_id:'stamping_marca', stamping_cuno_id:'stamping_cuno', relieve_id:'relieve' };
 let catalogos = [];
 let clientes = [];
+let troqueles = [];
 
 function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function opciones(lista, vacio = '— Seleccionar —') {
@@ -169,8 +170,8 @@ function opciones(lista, vacio = '— Seleccionar —') {
 }
 
 async function cargarListas() {
-  const [cat, cli] = await Promise.all([fetch('/api/catalogos').then(r => r.json()), fetch('/api/clientes').then(r => r.json())]);
-  catalogos = cat; clientes = cli;
+  const [cat, cli, tro] = await Promise.all([fetch('/api/catalogos').then(r => r.json()), fetch('/api/clientes').then(r => r.json()), fetch('/api/troqueles').then(r => r.json())]);
+  catalogos = cat; clientes = cli; troqueles = tro;
 }
 function armarSelects(seleccion = {}) {
   // en edición se mantiene visible la opción ya elegida aunque se haya desactivado
@@ -179,10 +180,18 @@ function armarSelects(seleccion = {}) {
   document.getElementById('liner').innerHTML = opciones(LINERS.map(t => [t, t]));
   document.getElementById('barniz').innerHTML = opciones(BARNICES.map(t => [t, t]));
   document.getElementById('sentido_bobinado').innerHTML = opciones(SENTIDOS.map(t => [t, t]));
+  document.getElementById('troquel_id').innerHTML = opciones(troqueles.filter(t => t.activo || t.id === seleccion.troquel_id).map(t => [t.id, t.codigo + ' (' + t.tipo + ')' + (t.activo ? '' : ' (inactivo)')]));
   for (const [campo, tipo] of Object.entries(CATALOGO_DE)) {
     const lista = catalogos.filter(i => i.tipo === tipo && (i.activo || i.id === seleccion[campo]));
     document.getElementById(campo).innerHTML = opciones(lista.map(i => [i.id, i.nombre + (i.activo ? '' : ' (inactivo)')]));
   }
+}
+// al elegir un troquel se completan las medidas de la ficha (se pueden corregir a mano)
+function aplicarTroquel() {
+  const t = troqueles.find(x => x.id === parseInt(document.getElementById('troquel_id').value));
+  if (!t) return;
+  const mapa = { ancho: t.ancho_etiqueta, alto: t.alto_etiqueta, gap_avance: t.gap_avance, gap_alto: t.gap_ancho, rep_avance: t.rep_avance, filas: t.rep_ancho };
+  for (const [campo, valor] of Object.entries(mapa)) if (valor != null) document.getElementById(campo).value = valor;
 }
 function armarTintas(tintas = []) {
   document.getElementById('tintas-grid').innerHTML = Array.from({ length: 8 }, (_, i) =>
@@ -267,7 +276,7 @@ async function initSesion() {
   document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
   const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
   document.getElementById('nav-links').innerHTML =
-    `<a href="/" style="${s}">← Órdenes</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a>`;
+    `<a href="/" style="${s}">← Órdenes</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a><a href="/troqueles.html" style="${s}">✂ Troqueles</a>`;
 }
 async function logout() {
   await fetch('/api/logout', { method: 'POST' });
