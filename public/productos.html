@@ -135,9 +135,7 @@
         <div class="form-group"><label>Serigrafía</label><select id="serigrafia_id"></select></div>
         <div class="form-group"><label>Stamping – Marca</label><select id="stamping_marca_id"></select></div>
         <div class="form-group"><label>Stamping – Cuño</label><select id="stamping_cuno_id"></select></div>
-        <div class="form-group"><label>Relieve</label>
-          <select id="relieve" onchange="alternarRelieve()"><option value="no">NO</option><option value="si">SI</option></select></div>
-        <div class="form-group" id="relieve-opcion" style="display:none"><label>Relieve – Cuño</label><select id="relieve_id"></select></div>
+        <div class="form-group"><label>Relieve – Cuño</label><select id="relieve_id"></select></div>
       </div>
 
       <div class="seccion">Datos variables</div>
@@ -186,9 +184,6 @@ function armarSelects(seleccion = {}) {
     document.getElementById(campo).innerHTML = opciones(lista.map(i => [i.id, i.nombre + (i.activo ? '' : ' (inactivo)')]));
   }
 }
-function alternarRelieve() {
-  document.getElementById('relieve-opcion').style.display = document.getElementById('relieve').value === 'si' ? '' : 'none';
-}
 function armarTintas(tintas = []) {
   document.getElementById('tintas-grid').innerHTML = Array.from({ length: 8 }, (_, i) =>
     `<input type="text" class="tinta" placeholder="Tinta ${i + 1}" value="${esc(tintas[i] || '')}" style="padding:9px 11px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px">`).join('');
@@ -219,8 +214,6 @@ async function cargarProductos() {
 function limpiarForm() {
   document.getElementById('producto-id').value = '';
   CAMPOS_TEXTO.forEach(k => document.getElementById(k).value = '');
-  document.getElementById('relieve').value = 'no';
-  alternarRelieve();
   armarTintas();
 }
 async function nuevoProducto() {
@@ -239,8 +232,6 @@ async function editarProducto(id) {
   document.getElementById('modal-title').textContent = 'Editar Producto';
   CAMPOS_TEXTO.forEach(k => document.getElementById(k).value = p[k] ?? '');
   CAMPOS_SELECT.forEach(k => document.getElementById(k).value = p[k] ?? '');
-  document.getElementById('relieve').value = p.relieve ? 'si' : 'no';
-  alternarRelieve();
   armarTintas(p.tintas || []);
   document.getElementById('modal-overlay').classList.add('active');
 }
@@ -249,7 +240,6 @@ async function guardarProducto() {
   const id = document.getElementById('producto-id').value;
   const data = {};
   [...CAMPOS_TEXTO, ...CAMPOS_SELECT].forEach(k => data[k] = document.getElementById(k).value);
-  data.relieve = document.getElementById('relieve').value === 'si';
   data.tintas = [...document.querySelectorAll('.tinta')].map(i => i.value.trim()).filter(Boolean);
   if (!data.cliente_id) { alert('El cliente es obligatorio'); return; }
   const res = await fetch(id ? `/api/productos/${id}` : '/api/productos', {
