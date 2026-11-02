@@ -144,6 +144,9 @@
         <div class="form-group"><label>Cant. máx. de etiquetas por rollo</label><input type="number" step="1" id="max_etiquetas_rollo"></div>
       </div>
 
+
+      <div class="seccion">Observaciones</div>
+      <div class="form-group"><textarea id="observaciones" rows="4" style="padding:9px 11px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px;font-family:Arial,sans-serif"></textarea></div>
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -157,7 +160,7 @@ const TIPOS_ETIQUETA = ['Frente', 'Contra', 'Medalla', 'Collarín', 'Otro'];
 const LINERS = ['Pet / Glassine', 'Pet', 'Glassine'];
 const BARNICES = ['Antifrote mate', 'Antifrote brillo', 'Antifrote semimate', 'Sobreimprimible'];
 const SENTIDOS = ['1', '2', '3', '4'];
-const CAMPOS_TEXTO = ['marca','detalle','mercado','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','max_etiquetas_rollo','anada','cubicacion','alcohol'];
+const CAMPOS_TEXTO = ['marca','detalle','mercado','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','max_etiquetas_rollo','anada','cubicacion','alcohol','observaciones'];
 const CAMPOS_SELECT = ['cliente_id','tipo_etiqueta','papel_id','papel_alt_id','liner','troquel_id','sentido_bobinado','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve_id'];
 const CATALOGO_DE = { papel_id:'papel', papel_alt_id:'papel', serigrafia_id:'serigrafia', stamping_marca_id:'stamping_marca' };
 let catalogos = [];
