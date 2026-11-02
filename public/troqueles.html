@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Troqueles</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  .toolbar { background: white; padding: 14px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+  .toolbar input { width: 300px; }
+  .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-secondary { background: #2c3e50; color: white; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .container { padding: 24px; overflow-x: auto; }
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
+  th { background: #1a1a2e; color: white; padding: 12px 10px; text-align: left; font-size: 12px; white-space: nowrap; }
+  td { padding: 10px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+  tr.inactivo td { color: #aaa; }
+  .empty-state { text-align: center; padding: 60px; color: #999; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; padding: 20px; }
+  .modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+  .modal { background: white; border-radius: 12px; width: 100%; max-width: 760px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { background: #1a1a2e; color: white; padding: 18px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; font-family: Arial, sans-serif; background: white; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: 2px solid #c0392b; border-color: transparent; }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>✂ Troqueles</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <nav id="nav-links"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="buscar" placeholder="🔍 Buscar por código, formato u observaciones..." oninput="cargar()">
+  <select id="filtro-tipo" onchange="cargar()">
+    <option value="">Todos los tipos</option>
+    <option value="rotativo">Rotativos</option>
+    <option value="semirotativo">Semirotativos</option>
+  </select>
+  <button class="btn btn-primary" onclick="nuevo()">+ Nuevo Troquel</button>
+  <span id="contador" style="font-size:13px;color:#777"></span>
+</div>
+
+<div class="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th><th>Tipo</th><th>Ancho x Alto</th><th>Rep. avance</th><th>Rep. ancho</th>
+        <th>Gap avance</th><th>Gap ancho</th><th>Z</th><th>Formato</th><th>Estado</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <h3>No hay troqueles</h3>
+    <p>Hacé clic en "Nuevo Troquel" para agregar el primero.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nuevo Troquel</h2>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="troquel-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Código troquel *</label><input type="text" id="codigo"></div>
+        <div class="form-group"><label>Tipo *</label>
+          <select id="tipo"><option value="">— Seleccionar —</option><option value="rotativo">Rotativo</option><option value="semirotativo">Semirotativo</option></select></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="activo"><option value="si">Activo</option><option value="no">Inactivo</option></select></div>
+        <div class="form-group"><label>Ancho etiqueta (mm)</label><input type="number" step="any" id="ancho_etiqueta" oninput="armarMedida()"></div>
+        <div class="form-group"><label>Alto etiqueta (mm)</label><input type="number" step="any" id="alto_etiqueta" oninput="armarMedida()"></div>
+        <div class="form-group"><label>Ancho x Alto</label><input type="text" id="ancho_x_alto"></div>
+        <div class="form-group"><label>Repeticiones al avance</label><input type="number" step="any" id="rep_avance"></div>
+        <div class="form-group"><label>Repeticiones al ancho</label><input type="number" step="any" id="rep_ancho"></div>
+        <div class="form-group"><label>Formato</label><input type="text" id="formato"></div>
+        <div class="form-group"><label>Gap al avance (mm)</label><input type="number" step="any" id="gap_avance"></div>
+        <div class="form-group"><label>Gap al ancho (mm)</label><input type="number" step="any" id="gap_ancho"></div>
+        <div class="form-group"><label>Z</label><input type="text" id="z"></div>
+        <div class="form-group full"><label>Observaciones</label><textarea id="observaciones" rows="3"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardar()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAMPOS = ['codigo','tipo','ancho_etiqueta','alto_etiqueta','ancho_x_alto','rep_avance','rep_ancho','gap_avance','gap_ancho','z','formato','observaciones'];
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const v = x => x == null || x === '' ? '–' : esc(x);
+
+async function cargar() {
+  const params = new URLSearchParams();
+  const q = document.getElementById('buscar').value;
+  const tipo = document.getElementById('filtro-tipo').value;
+  if (q) params.set('q', q);
+  if (tipo) params.set('tipo', tipo);
+  const lista = await fetch('/api/troqueles?' + params).then(r => r.json());
+  document.getElementById('empty-state').style.display = lista.length ? 'none' : 'block';
+  document.getElementById('contador').textContent = lista.length ? lista.length + ' troqueles' : '';
+  document.getElementById('tabla').innerHTML = lista.map(t => `
+    <tr class="${t.activo ? '' : 'inactivo'}">
+      <td><strong>${esc(t.codigo)}</strong></td>
+      <td>${t.tipo === 'rotativo' ? 'Rotativo' : 'Semirotativo'}</td>
+      <td>${v(t.ancho_x_alto)}</td><td>${v(t.rep_avance)}</td><td>${v(t.rep_ancho)}</td>
+      <td>${v(t.gap_avance)}</td><td>${v(t.gap_ancho)}</td><td>${v(t.z)}</td><td>${v(t.formato)}</td>
+      <td>${t.activo ? 'Activo' : 'Inactivo'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-info btn-sm" onclick="editar(${t.id})">✏ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminar(${t.id}, '${String(t.codigo).replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+// si el campo "Ancho x Alto" está vacío o es el generado automáticamente, se mantiene al día
+let medidaAuto = '';
+function armarMedida() {
+  const a = document.getElementById('ancho_etiqueta').value, h = document.getElementById('alto_etiqueta').value;
+  const campo = document.getElementById('ancho_x_alto');
+  if (campo.value === '' || campo.value === medidaAuto) {
+    medidaAuto = a && h ? `${a} x ${h}` : '';
+    campo.value = medidaAuto;
+  }
+}
+
+function limpiar() {
+  document.getElementById('troquel-id').value = '';
+  CAMPOS.forEach(k => document.getElementById(k).value = '');
+  document.getElementById('activo').value = 'si';
+  medidaAuto = '';
+}
+function nuevo() {
+  limpiar();
+  document.getElementById('modal-title').textContent = 'Nuevo Troquel';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+async function editar(id) {
+  const t = await fetch(`/api/troqueles/${id}`).then(r => r.json());
+  limpiar();
+  document.getElementById('troquel-id').value = t.id;
+  document.getElementById('modal-title').textContent = 'Editar Troquel';
+  CAMPOS.forEach(k => document.getElementById(k).value = t[k] ?? '');
+  document.getElementById('activo').value = t.activo ? 'si' : 'no';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+async function guardar() {
+  const id = document.getElementById('troquel-id').value;
+  const data = {};
+  CAMPOS.forEach(k => data[k] = document.getElementById(k).value);
+  data.activo = document.getElementById('activo').value === 'si';
+  if (!data.codigo.trim()) { alert('El código es obligatorio'); return; }
+  if (!data.tipo) { alert('El tipo es obligatorio'); return; }
+  const res = await fetch(id ? `/api/troqueles/${id}` : '/api/troqueles', {
+    method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarModal();
+  cargar();
+}
+async function eliminar(id, codigo) {
+  if (!confirm(`¿Eliminar el troquel "${codigo}"? Esta acción no se puede deshacer.`)) return;
+  const json = await fetch(`/api/troqueles/${id}`, { method: 'DELETE' }).then(r => r.json());
+  if (json.error) alert(json.error);
+  cargar();
+}
+function cerrarModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) cerrarModal(); });
+
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const u = await res.json();
+  if (u.rol !== 'ADMIN') { window.location.href = '/'; return; }
+  document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
+  const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  document.getElementById('nav-links').innerHTML =
+    `<a href="/" style="${s}">← Órdenes</a><a href="/productos.html" style="${s}">🏷 Productos</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a>`;
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+initSesion();
+cargar();
+</script>
+</body>
+</html>
