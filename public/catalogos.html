@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Catálogos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  .tabs { background: white; padding: 0 24px; display: flex; gap: 4px; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+  .tab { padding: 13px 16px; border: none; background: none; font-size: 14px; font-weight: 600; color: #666; cursor: pointer; border-bottom: 3px solid transparent; }
+  .tab.active { color: #c0392b; border-bottom-color: #c0392b; }
+  .toolbar { background: white; padding: 14px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #ddd; }
+  .toolbar input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; width: 320px; }
+  .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .container { padding: 24px; max-width: 760px; }
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
+  th { background: #1a1a2e; color: white; padding: 12px 14px; text-align: left; font-size: 13px; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr.inactivo td { color: #aaa; }
+  .empty-state { text-align: center; padding: 50px; color: #999; }
+  .hint { font-size: 13px; color: #777; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Catálogos de Productos</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <nav id="nav-links"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="tabs" id="tabs"></div>
+
+<div class="toolbar">
+  <input type="text" id="nuevo-nombre" placeholder="Nombre de la nueva opción..." onkeydown="if(event.key==='Enter')agregar()">
+  <button class="btn btn-primary" onclick="agregar()">+ Agregar</button>
+</div>
+
+<div class="container">
+  <p class="hint">Estas opciones aparecen como lista desplegable en la ficha de producto. Una opción en uso no se puede eliminar: desactivala para que deje de ofrecerse.</p>
+  <table>
+    <thead><tr><th>Nombre</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div id="empty-state" class="empty-state" style="display:none">Todavía no hay opciones en esta lista.</div>
+</div>
+
+<script>
+const TIPOS = [
+  ['papel', 'Papeles'],
+  ['troquel', 'Troqueles'],
+  ['serigrafia', 'Serigrafía'],
+  ['stamping_marca', 'Stamping – Marca'],
+  ['stamping_cuno', 'Stamping – Cuño'],
+  ['relieve', 'Relieve'],
+];
+let tipoActual = TIPOS[0][0];
+let items = [];
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = TIPOS.map(([k, label]) =>
+    `<button class="tab ${k === tipoActual ? 'active' : ''}" onclick="elegirTipo('${k}')">${label}</button>`).join('');
+}
+function elegirTipo(k) { tipoActual = k; renderTabs(); cargar(); }
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+async function cargar() {
+  const res = await fetch('/api/catalogos?tipo=' + tipoActual);
+  items = await res.json();
+  const tbody = document.getElementById('tabla');
+  document.getElementById('empty-state').style.display = items.length ? 'none' : 'block';
+  tbody.innerHTML = items.map(i => `
+    <tr class="${i.activo ? '' : 'inactivo'}">
+      <td><strong>${esc(i.nombre)}</strong></td>
+      <td>${i.activo ? 'Activo' : 'Inactivo'}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="renombrar(${i.id})">✏ Renombrar</button>
+        <button class="btn btn-sm" style="background:#7f8c8d;color:white" onclick="alternar(${i.id})">${i.activo ? 'Desactivar' : 'Activar'}</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminar(${i.id})">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function enviar(url, method, body) {
+  const res = await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  const json = await res.json();
+  if (json.error) { alert(json.error); return false; }
+  return true;
+}
+async function agregar() {
+  const input = document.getElementById('nuevo-nombre');
+  const nombre = input.value.trim();
+  if (!nombre) return;
+  if (await enviar('/api/catalogos', 'POST', { tipo: tipoActual, nombre })) { input.value = ''; cargar(); }
+}
+async function renombrar(id) {
+  const i = items.find(x => x.id === id);
+  const nombre = prompt('Nuevo nombre:', i.nombre);
+  if (nombre === null || !nombre.trim()) return;
+  if (await enviar(`/api/catalogos/${id}`, 'PUT', { nombre, activo: i.activo })) cargar();
+}
+async function alternar(id) {
+  const i = items.find(x => x.id === id);
+  if (await enviar(`/api/catalogos/${id}`, 'PUT', { nombre: i.nombre, activo: !i.activo })) cargar();
+}
+async function eliminar(id) {
+  const i = items.find(x => x.id === id);
+  if (!confirm(`¿Eliminar "${i.nombre}"? Esta acción no se puede deshacer.`)) return;
+  const res = await fetch(`/api/catalogos/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (json.error) alert(json.error);
+  cargar();
+}
+
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const u = await res.json();
+  if (u.rol !== 'ADMIN') { window.location.href = '/'; return; }
+  document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
+  const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  document.getElementById('nav-links').innerHTML =
+    `<a href="/" style="${s}">← Órdenes</a><a href="/productos.html" style="${s}">🏷 Productos</a>`;
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+initSesion();
+renderTabs();
+cargar();
+</script>
+</body>
+</html>
