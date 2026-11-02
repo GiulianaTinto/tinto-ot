@@ -75,6 +75,24 @@ CREATE TABLE IF NOT EXISTS catalogos (
   UNIQUE (tipo, nombre)
 );
 
+CREATE TABLE IF NOT EXISTS troqueles (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('rotativo','semirotativo')),
+  ancho_etiqueta NUMERIC,
+  alto_etiqueta NUMERIC,
+  ancho_x_alto TEXT,
+  rep_avance NUMERIC,
+  rep_ancho NUMERIC,
+  gap_avance NUMERIC,
+  gap_ancho NUMERIC,
+  z TEXT,
+  formato TEXT,
+  observaciones TEXT,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS productos (
   id SERIAL PRIMARY KEY,
   codigo TEXT UNIQUE,                       -- reservado: la generación del código se define más adelante
@@ -86,7 +104,7 @@ CREATE TABLE IF NOT EXISTS productos (
   papel_id INTEGER REFERENCES catalogos(id),
   papel_alt_id INTEGER REFERENCES catalogos(id),   -- papel alternativo (opcional, cuando el liner es indiferente)
   liner TEXT,                               -- 'Pet / Glassine' | 'Pet' | 'Glassine'
-  troquel_id INTEGER REFERENCES catalogos(id),
+  troquel_id INTEGER REFERENCES troqueles(id),
   ancho NUMERIC,
   alto NUMERIC,
   gap_avance NUMERIC,
