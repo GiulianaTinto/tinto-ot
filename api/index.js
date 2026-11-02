@@ -125,6 +125,97 @@ app.delete('/api/clientes/:id', solo('ADMIN'), async (req, res) => {
   res.json({ ok: true });
 });
 
+// Catálogos (listas desplegables de Productos) — solo ADMIN por ahora
+const TIPOS_CATALOGO = ['papel', 'troquel', 'serigrafia', 'stamping_marca', 'stamping_cuno', 'relieve'];
+app.get('/api/catalogos', solo('ADMIN'), async (req, res) => {
+  const { tipo } = req.query;
+  const { rows } = tipo
+    ? await pool.query('SELECT * FROM catalogos WHERE tipo=$1 ORDER BY nombre', [tipo])
+    : await pool.query('SELECT * FROM catalogos ORDER BY tipo, nombre');
+  res.json(rows);
+});
+app.post('/api/catalogos', solo('ADMIN'), async (req, res) => {
+  const { tipo, nombre } = req.body;
+  if (!TIPOS_CATALOGO.includes(tipo)) return res.status(400).json({ error: 'Tipo de catálogo inválido' });
+  if (!nombre?.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' });
+  try {
+    const { rows } = await pool.query('INSERT INTO catalogos (tipo,nombre) VALUES ($1,$2) RETURNING id', [tipo, nombre.trim()]);
+    res.json({ id: rows[0].id });
+  } catch(e) { res.status(400).json({ error: 'Ya existe esa opción en la lista' }); }
+});
+app.put('/api/catalogos/:id', solo('ADMIN'), async (req, res) => {
+  const { nombre, activo } = req.body;
+  if (!nombre?.trim()) return res.status(400).json({ error: 'El nombre es obligatorio' });
+  try {
+    await pool.query('UPDATE catalogos SET nombre=$1,activo=$2 WHERE id=$3', [nombre.trim(), activo !== false, req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: 'Ya existe esa opción en la lista' }); }
+});
+app.delete('/api/catalogos/:id', solo('ADMIN'), async (req, res) => {
+  try {
+    await pool.query('DELETE FROM catalogos WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: 'No se puede eliminar: hay productos que usan esta opción. Desactivala en su lugar.' }); }
+});
+
+// Productos — solo ADMIN por ahora
+const num = v => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
+const idOrNull = v => (v === '' || v == null) ? null : parseInt(v);
+function valoresProducto(d) {
+  const tintas = (Array.isArray(d.tintas) ? d.tintas : []).map(t => String(t || '').trim()).filter(Boolean).slice(0, 8);
+  const relieve = d.relieve === true || d.relieve === 'si';
+  return [
+    idOrNull(d.cliente_id), d.marca, d.detalle, d.tipo_etiqueta, d.mercado,
+    idOrNull(d.papel_id), idOrNull(d.papel_alt_id), d.liner, idOrNull(d.troquel_id),
+    num(d.ancho), num(d.alto), num(d.gap_avance), num(d.gap_alto), num(d.rep_avance), num(d.filas), num(d.ancho_sustrato),
+    num(d.sentido_bobinado), num(d.max_etiquetas_rollo),
+    JSON.stringify(tintas), d.barniz,
+    idOrNull(d.serigrafia_id), idOrNull(d.stamping_marca_id), idOrNull(d.stamping_cuno_id), relieve, relieve ? idOrNull(d.relieve_id) : null,
+    d.anada, d.cubicacion, d.alcohol
+  ];
+}
+const COLS_PRODUCTO = ['cliente_id','marca','detalle','tipo_etiqueta','mercado','papel_id','papel_alt_id','liner','troquel_id','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','sentido_bobinado','max_etiquetas_rollo','tintas','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve','relieve_id','anada','cubicacion','alcohol'];
+app.get('/api/productos', solo('ADMIN'), async (req, res) => {
+  const { q } = req.query;
+  const sql = `SELECT p.id, p.codigo, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.nombre AS troquel
+    FROM productos p JOIN clientes c ON c.id=p.cliente_id
+    LEFT JOIN catalogos pa ON pa.id=p.papel_id LEFT JOIN catalogos pb ON pb.id=p.papel_alt_id LEFT JOIN catalogos t ON t.id=p.troquel_id
+    ${q ? 'WHERE c.nombre ILIKE $1 OR p.marca ILIKE $1 OR p.detalle ILIKE $1 OR p.codigo ILIKE $1' : ''} ORDER BY c.nombre, p.marca, p.detalle`;
+  const { rows } = await pool.query(sql, q ? [`%${q}%`] : []);
+  res.json(rows);
+});
+app.get('/api/productos/:id', solo('ADMIN'), async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM productos WHERE id=$1', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  res.json(rows[0]);
+});
+app.post('/api/productos', solo('ADMIN'), async (req, res) => {
+  const d = req.body;
+  if (!idOrNull(d.cliente_id)) return res.status(400).json({ error: 'El cliente es obligatorio' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO productos (${COLS_PRODUCTO.join(',')}) VALUES (${COLS_PRODUCTO.map((_, i) => '$' + (i + 1)).join(',')}) RETURNING id`,
+      valoresProducto(d)
+    );
+    res.json({ id: rows[0].id });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+app.put('/api/productos/:id', solo('ADMIN'), async (req, res) => {
+  const d = req.body;
+  if (!idOrNull(d.cliente_id)) return res.status(400).json({ error: 'El cliente es obligatorio' });
+  try {
+    await pool.query(
+      `UPDATE productos SET ${COLS_PRODUCTO.map((c, i) => `${c}=$${i + 1}`).join(',')},updated_at=NOW() WHERE id=$${COLS_PRODUCTO.length + 1}`,
+      [...valoresProducto(d), req.params.id]
+    );
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: e.message }); }
+});
+app.delete('/api/productos/:id', solo('ADMIN'), async (req, res) => {
+  await pool.query('DELETE FROM productos WHERE id=$1', [req.params.id]);
+  res.json({ ok: true });
+});
+
 // Órdenes
 const EDITAN_OT = ['ADMIN', 'COMERCIAL', 'PRODUCCION', 'PREPRENSA'];
 app.get('/api/ordenes', authMiddleware, async (req, res) => {
