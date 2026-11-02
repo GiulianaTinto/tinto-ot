@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Insumos y herramentales</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  .container { padding: 32px 24px; max-width: 960px; margin: 0 auto; }
+  .container > p { color: #666; font-size: 14px; margin-bottom: 24px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; }
+  .card { display: block; background: white; border-radius: 12px; padding: 24px; text-decoration: none; color: inherit; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-top: 4px solid #c0392b; }
+  .card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.15); }
+  .card .ico { font-size: 28px; margin-bottom: 10px; }
+  .card h2 { font-size: 17px; margin-bottom: 6px; }
+  .card span { font-size: 13px; color: #666; line-height: 1.4; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🧰 Insumos y herramentales</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <nav id="nav-links"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="container">
+  <p>Listas de base que se usan al dar de alta los productos.</p>
+  <div class="cards">
+    <a class="card" href="/catalogos.html"><div class="ico">📚</div><h2>Catálogos</h2><span>Papeles, serigrafía y marcas de stamping.</span></a>
+    <a class="card" href="/troqueles.html"><div class="ico">✂</div><h2>Troqueles</h2><span>Listado de troqueles rotativos y semirotativos con sus medidas.</span></a>
+    <a class="card" href="/cunos.html"><div class="ico">🔖</div><h2>Cuños</h2><span>Cuños de stamping y relieve.</span></a>
+  </div>
+</div>
+
+<script>
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const u = await res.json();
+  if (u.rol !== 'ADMIN') { window.location.href = '/'; return; }
+  document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
+  const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  document.getElementById('nav-links').innerHTML =
+    `<a href="/" style="${s}">← Órdenes</a><a href="/productos.html" style="${s}">🏷 Productos</a>`;
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+initSesion();
+</script>
+</body>
+</html>
