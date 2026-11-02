@@ -126,7 +126,7 @@ app.delete('/api/clientes/:id', solo('ADMIN'), async (req, res) => {
 });
 
 // Catálogos (listas desplegables de Productos) — solo ADMIN por ahora
-const TIPOS_CATALOGO = ['papel', 'serigrafia', 'stamping_marca', 'stamping_cuno', 'relieve'];
+const TIPOS_CATALOGO = ['papel', 'serigrafia', 'stamping_marca'];
 app.get('/api/catalogos', solo('ADMIN'), async (req, res) => {
   const { tipo } = req.query;
   const { rows } = tipo
@@ -265,6 +265,52 @@ app.delete('/api/troqueles/:id', solo('ADMIN'), async (req, res) => {
     await pool.query('DELETE FROM troqueles WHERE id=$1', [req.params.id]);
     res.json({ ok: true });
   } catch(e) { res.status(400).json({ error: 'No se puede eliminar: hay productos que usan este troquel. Desactivalo en su lugar.' }); }
+});
+
+// Cuños (stamping y relieve comparten la misma lista) — solo ADMIN por ahora
+const COLS_CUNO = ['codigo','tipo','cliente','producto','tipo_etiqueta','material','imagenes','observaciones','contraparte','nombre','activo'];
+function valoresCuno(d) {
+  return [String(d.codigo || '').trim().toUpperCase(), d.tipo, d.cliente, d.producto, d.tipo_etiqueta, d.material, num(d.imagenes), d.observaciones, d.contraparte, d.nombre, d.activo !== false];
+}
+app.get('/api/cunos', solo('ADMIN'), async (req, res) => {
+  const { q } = req.query;
+  const { rows } = q
+    ? await pool.query('SELECT * FROM cunos WHERE codigo ILIKE $1 OR cliente ILIKE $1 OR producto ILIKE $1 OR nombre ILIKE $1 ORDER BY codigo', [`%${q}%`])
+    : await pool.query('SELECT * FROM cunos ORDER BY codigo');
+  res.json(rows);
+});
+app.get('/api/cunos/:id', solo('ADMIN'), async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM cunos WHERE id=$1', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  res.json(rows[0]);
+});
+app.post('/api/cunos', solo('ADMIN'), async (req, res) => {
+  const d = req.body;
+  if (!String(d.codigo || '').trim()) return res.status(400).json({ error: 'El código es obligatorio' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO cunos (${COLS_CUNO.join(',')}) VALUES (${COLS_CUNO.map((_, i) => '$' + (i + 1)).join(',')}) RETURNING id`,
+      valoresCuno(d)
+    );
+    res.json({ id: rows[0].id });
+  } catch(e) { res.status(400).json({ error: e.code === '23505' ? 'Ya existe un cuño con ese código' : e.message }); }
+});
+app.put('/api/cunos/:id', solo('ADMIN'), async (req, res) => {
+  const d = req.body;
+  if (!String(d.codigo || '').trim()) return res.status(400).json({ error: 'El código es obligatorio' });
+  try {
+    await pool.query(
+      `UPDATE cunos SET ${COLS_CUNO.map((c, i) => `${c}=$${i + 1}`).join(',')} WHERE id=$${COLS_CUNO.length + 1}`,
+      [...valoresCuno(d), req.params.id]
+    );
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: e.code === '23505' ? 'Ya existe un cuño con ese código' : e.message }); }
+});
+app.delete('/api/cunos/:id', solo('ADMIN'), async (req, res) => {
+  try {
+    await pool.query('DELETE FROM cunos WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: 'No se puede eliminar: hay productos que usan este cuño. Desactivalo en su lugar.' }); }
 });
 
 // Órdenes
