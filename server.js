@@ -216,7 +216,7 @@ app.get('/api/productos/:id', solo('ADMIN'), async (req, res) => {
 app.post('/api/productos', solo('ADMIN'), async (req, res) => {
   const d = req.body;
   if (!idOrNull(d.cliente_id)) return res.status(400).json({ error: 'El cliente es obligatorio' });
-  // Código: CLIENTE(6)-TIPO(2)-MARCA(3)-DETALLE(10)-AÑADA(4)-CUBICACIÓN(4)-ALCOHOL(3)-VERSIÓN(3); el alcohol va en décimas (13,5 → 135) y es 000 si no se cargó. Se genera al crear y no cambia al editar.
+  // Código: CLIENTE(6)-TIPO(2)-MARCA(3)-DETALLE(10)-AÑADA(2)-CUBICACIÓN(4)-ALCOHOL(3)-VERSIÓN(3); el alcohol va en décimas (13,5 → 135) y es 000 si no se cargó. Se genera al crear y no cambia al editar.
   const limpio = (s, n) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, n).padEnd(n, 'X');
   // marca de una palabra: 3 primeras letras · dos palabras: inicial + 2 primeras de la segunda (Los Haroldos → LHA) · tres o más: iniciales
   const marca3 = s => {
@@ -229,7 +229,7 @@ app.post('/api/productos', solo('ADMIN'), async (req, res) => {
   if (!cli[0]?.codigo_cliente) return res.status(400).json({ error: 'El cliente no tiene Código Cliente: cargalo en Clientes para poder generar el código del producto' });
   if (!String(d.marca || '').trim() || !String(d.detalle || '').trim()) return res.status(400).json({ error: 'Marca y Detalle / Varietal son obligatorios para generar el código' });
   const digitos4 = v => String(v || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
-  const anada = (() => { const dg = String(d.anada || '').replace(/\D/g, ''); return dg.length === 2 ? '20' + dg : digitos4(dg); })();
+  const anada = (String(d.anada || '').replace(/\D/g, '').slice(-2) || '0').padStart(2, '0');   // 2025 → 25 · sin añada → 00
   const TIPOS_COD = { FRENTE: 'FR', CONTRA: 'CT', MEDALLA: 'MD', COLLARIN: 'CL', STICKER: 'ST', FAJA: 'FJ' };
   const tipoCod = TIPOS_COD[limpio(d.tipo_etiqueta, 12).replace(/X+$/, '')];
   if (!tipoCod) return res.status(400).json({ error: 'El Tipo de etiqueta es obligatorio para generar el código' });
