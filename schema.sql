@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS ordenes (
   anio TEXT,
   alcohol TEXT,
   observaciones TEXT,
+  tecnologia TEXT,                          -- Flexografía | Digital
   contenido TEXT,
   pais_importador TEXT,
   desarrollo TEXT DEFAULT 'NUEVO',
