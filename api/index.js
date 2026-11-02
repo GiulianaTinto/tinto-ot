@@ -177,7 +177,7 @@ function valoresProducto(d) {
 const COLS_PRODUCTO = ['cliente_id','marca','detalle','tipo_etiqueta','mercado','papel_id','papel_alt_id','liner','troquel_id','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','sentido_bobinado','max_etiquetas_rollo','tintas','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve','relieve_id','anada','cubicacion','alcohol','observaciones','tecnologia'];
 app.get('/api/productos', solo('ADMIN'), async (req, res) => {
   const { q } = req.query;
-  const sql = `SELECT p.id, p.codigo, p.tecnologia, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.codigo AS troquel
+  const sql = `SELECT p.id, p.codigo, p.created_at, p.tecnologia, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.codigo AS troquel
     FROM productos p JOIN clientes c ON c.id=p.cliente_id
     LEFT JOIN catalogos pa ON pa.id=p.papel_id LEFT JOIN catalogos pb ON pb.id=p.papel_alt_id LEFT JOIN troqueles t ON t.id=p.troquel_id
     ${q ? 'WHERE c.nombre ILIKE $1 OR p.marca ILIKE $1 OR p.detalle ILIKE $1 OR p.codigo ILIKE $1' : ''} ORDER BY c.nombre, p.marca, p.detalle`;
