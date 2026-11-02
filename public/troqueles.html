@@ -206,7 +206,7 @@ async function initSesion() {
   document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
   const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
   document.getElementById('nav-links').innerHTML =
-    `<a href="/" style="${s}">← Órdenes</a><a href="/productos.html" style="${s}">🏷 Productos</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a><a href="/cunos.html" style="${s}">🔖 Cuños</a>`;
+    `<a href="/" style="${s}">← Órdenes</a><a href="/productos.html" style="${s}">🏷 Productos</a><a href="/insumos.html" style="${s}">🧰 Insumos y herramentales</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a><a href="/cunos.html" style="${s}">🔖 Cuños</a>`;
 }
 async function logout() {
   await fetch('/api/logout', { method: 'POST' });
