@@ -216,16 +216,19 @@ app.get('/api/productos/:id', solo('ADMIN'), async (req, res) => {
 app.post('/api/productos', solo('ADMIN'), async (req, res) => {
   const d = req.body;
   if (!idOrNull(d.cliente_id)) return res.status(400).json({ error: 'El cliente es obligatorio' });
-  // Código: CLIENTE(6)-MARCA(3)-DETALLE(10)-CUBICACIÓN(4)-VERSIÓN(3). Se genera al crear y no cambia al editar.
+  // Código: CLIENTE(6)-MARCA(3)-DETALLE(10)-AÑADA(4)-CUBICACIÓN(4)-[ALCOHOL(3)]-VERSIÓN(3); el alcohol solo va si se cargó. Se genera al crear y no cambia al editar.
   const limpio = (s, n) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, n).padEnd(n, 'X');
   const { rows: cli } = await pool.query('SELECT codigo_cliente FROM clientes WHERE id=$1', [idOrNull(d.cliente_id)]);
   if (!cli[0]?.codigo_cliente) return res.status(400).json({ error: 'El cliente no tiene Código Cliente: cargalo en Clientes para poder generar el código del producto' });
   if (!String(d.marca || '').trim() || !String(d.detalle || '').trim()) return res.status(400).json({ error: 'Marca y Detalle / Varietal son obligatorios para generar el código' });
-  const cubicacion = String(d.cubicacion || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
-  const base = [limpio(cli[0].codigo_cliente, 6), limpio(d.marca, 3), limpio(d.detalle, 10), cubicacion].join('-');
+  const digitos4 = v => String(v || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+  const anada = (() => { const dg = String(d.anada || '').replace(/\D/g, ''); return dg.length === 2 ? '20' + dg : digitos4(dg); })();
+  const alc = Math.round(parseFloat(String(d.alcohol || '').replace(',', '.')) * 10);   // 13,5 → 135 · 14 → 140
+  const alcohol = alc > 0 && alc < 1000 ? String(alc).padStart(3, '0') : '';
+  const base = [limpio(cli[0].codigo_cliente, 6), limpio(d.marca, 3), limpio(d.detalle, 10), anada, digitos4(d.cubicacion), alcohol].filter(Boolean).join('-');
   try {
     for (let intento = 0; intento < 5; intento++) {
-      const { rows: v } = await pool.query('SELECT COALESCE(MAX(RIGHT(codigo, 3)::int), 0) + 1 AS n FROM productos WHERE codigo LIKE $1', [base + '-%']);
+      const { rows: v } = await pool.query('SELECT COALESCE(MAX(RIGHT(codigo, 3)::int), 0) + 1 AS n FROM productos WHERE codigo ~ $1', ['^' + base + '-[0-9]{3}$']);
       const codigo = base + '-' + String(v[0].n).padStart(3, '0');
       try {
         const { rows } = await pool.query(
