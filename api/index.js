@@ -126,7 +126,7 @@ app.delete('/api/clientes/:id', solo('ADMIN'), async (req, res) => {
 });
 
 // Catálogos (listas desplegables de Productos) — solo ADMIN por ahora
-const TIPOS_CATALOGO = ['papel', 'troquel', 'serigrafia', 'stamping_marca', 'stamping_cuno', 'relieve'];
+const TIPOS_CATALOGO = ['papel', 'serigrafia', 'stamping_marca', 'stamping_cuno', 'relieve'];
 app.get('/api/catalogos', solo('ADMIN'), async (req, res) => {
   const { tipo } = req.query;
   const { rows } = tipo
@@ -177,9 +177,9 @@ function valoresProducto(d) {
 const COLS_PRODUCTO = ['cliente_id','marca','detalle','tipo_etiqueta','mercado','papel_id','papel_alt_id','liner','troquel_id','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','sentido_bobinado','max_etiquetas_rollo','tintas','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve','relieve_id','anada','cubicacion','alcohol'];
 app.get('/api/productos', solo('ADMIN'), async (req, res) => {
   const { q } = req.query;
-  const sql = `SELECT p.id, p.codigo, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.nombre AS troquel
+  const sql = `SELECT p.id, p.codigo, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.codigo AS troquel
     FROM productos p JOIN clientes c ON c.id=p.cliente_id
-    LEFT JOIN catalogos pa ON pa.id=p.papel_id LEFT JOIN catalogos pb ON pb.id=p.papel_alt_id LEFT JOIN catalogos t ON t.id=p.troquel_id
+    LEFT JOIN catalogos pa ON pa.id=p.papel_id LEFT JOIN catalogos pb ON pb.id=p.papel_alt_id LEFT JOIN troqueles t ON t.id=p.troquel_id
     ${q ? 'WHERE c.nombre ILIKE $1 OR p.marca ILIKE $1 OR p.detalle ILIKE $1 OR p.codigo ILIKE $1' : ''} ORDER BY c.nombre, p.marca, p.detalle`;
   const { rows } = await pool.query(sql, q ? [`%${q}%`] : []);
   res.json(rows);
@@ -214,6 +214,57 @@ app.put('/api/productos/:id', solo('ADMIN'), async (req, res) => {
 app.delete('/api/productos/:id', solo('ADMIN'), async (req, res) => {
   await pool.query('DELETE FROM productos WHERE id=$1', [req.params.id]);
   res.json({ ok: true });
+});
+
+// Troqueles (rotativos y semirotativos) — solo ADMIN por ahora
+const TIPOS_TROQUEL = ['rotativo', 'semirotativo'];
+const COLS_TROQUEL = ['codigo','tipo','ancho_etiqueta','alto_etiqueta','ancho_x_alto','rep_avance','rep_ancho','gap_avance','gap_ancho','z','formato','observaciones','activo'];
+function valoresTroquel(d) {
+  return [String(d.codigo || '').trim(), d.tipo, num(d.ancho_etiqueta), num(d.alto_etiqueta), d.ancho_x_alto, num(d.rep_avance), num(d.rep_ancho), num(d.gap_avance), num(d.gap_ancho), d.z, d.formato, d.observaciones, d.activo !== false];
+}
+app.get('/api/troqueles', solo('ADMIN'), async (req, res) => {
+  const { q, tipo } = req.query;
+  const params = [];
+  let sql = 'SELECT * FROM troqueles WHERE 1=1';
+  if (tipo) { params.push(tipo); sql += ` AND tipo=$${params.length}`; }
+  if (q) { params.push(`%${q}%`); sql += ` AND (codigo ILIKE $${params.length} OR formato ILIKE $${params.length} OR observaciones ILIKE $${params.length})`; }
+  const { rows } = await pool.query(sql + ' ORDER BY codigo', params);
+  res.json(rows);
+});
+app.get('/api/troqueles/:id', solo('ADMIN'), async (req, res) => {
+  const { rows } = await pool.query('SELECT * FROM troqueles WHERE id=$1', [req.params.id]);
+  if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
+  res.json(rows[0]);
+});
+app.post('/api/troqueles', solo('ADMIN'), async (req, res) => {
+  const d = req.body;
+  if (!String(d.codigo || '').trim()) return res.status(400).json({ error: 'El código es obligatorio' });
+  if (!TIPOS_TROQUEL.includes(d.tipo)) return res.status(400).json({ error: 'El tipo es obligatorio (rotativo o semirotativo)' });
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO troqueles (${COLS_TROQUEL.join(',')}) VALUES (${COLS_TROQUEL.map((_, i) => '$' + (i + 1)).join(',')}) RETURNING id`,
+      valoresTroquel(d)
+    );
+    res.json({ id: rows[0].id });
+  } catch(e) { res.status(400).json({ error: e.code === '23505' ? 'Ya existe un troquel con ese código' : e.message }); }
+});
+app.put('/api/troqueles/:id', solo('ADMIN'), async (req, res) => {
+  const d = req.body;
+  if (!String(d.codigo || '').trim()) return res.status(400).json({ error: 'El código es obligatorio' });
+  if (!TIPOS_TROQUEL.includes(d.tipo)) return res.status(400).json({ error: 'El tipo es obligatorio (rotativo o semirotativo)' });
+  try {
+    await pool.query(
+      `UPDATE troqueles SET ${COLS_TROQUEL.map((c, i) => `${c}=$${i + 1}`).join(',')} WHERE id=$${COLS_TROQUEL.length + 1}`,
+      [...valoresTroquel(d), req.params.id]
+    );
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: e.code === '23505' ? 'Ya existe un troquel con ese código' : e.message }); }
+});
+app.delete('/api/troqueles/:id', solo('ADMIN'), async (req, res) => {
+  try {
+    await pool.query('DELETE FROM troqueles WHERE id=$1', [req.params.id]);
+    res.json({ ok: true });
+  } catch(e) { res.status(400).json({ error: 'No se puede eliminar: hay productos que usan este troquel. Desactivalo en su lugar.' }); }
 });
 
 // Órdenes
