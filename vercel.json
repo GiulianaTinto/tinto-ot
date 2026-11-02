@@ -9,6 +9,7 @@
     { "src": "/login", "dest": "/public/login.html" },
     { "src": "/clientes.html", "dest": "/public/clientes.html" },
     { "src": "/productos.html", "dest": "/public/productos.html" },
+    { "src": "/troqueles.html", "dest": "/public/troqueles.html" },
     { "src": "/catalogos.html", "dest": "/public/catalogos.html" },
     { "src": "/usuarios.html", "dest": "/public/usuarios.html" },
     { "src": "/calculadora.html", "dest": "/public/calculadora.html" },
