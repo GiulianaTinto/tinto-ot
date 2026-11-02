@@ -66,7 +66,7 @@
   <table>
     <thead>
       <tr>
-        <th>Código</th><th>Tecnología</th><th>Cliente</th><th>Marca</th><th>Detalle / Varietal</th><th>Tipo</th><th>Papel</th><th>Troquel</th><th>Acciones</th>
+        <th>Código</th><th>Tecnología</th><th>Cliente</th><th>Marca</th><th>Detalle / Varietal</th><th>Tipo</th><th>Papel</th><th>Troquel</th><th>Creado</th><th>Acciones</th>
       </tr>
     </thead>
     <tbody id="tabla-productos"></tbody>
@@ -164,6 +164,7 @@
 <script>
 const TIPOS_ETIQUETA = ['Frente', 'Contra', 'Medalla', 'Collarín', 'Sticker', 'Faja'];
 const LINERS = ['Pet / Glassine', 'Pet', 'Glassine'];
+const fechaCorta = v => v ? new Date(v).toLocaleDateString('es-AR') : '–';
 const TECNOLOGIAS = ['Flexografía', 'Digital'];
 const BARNICES = ['Antifrote mate', 'Antifrote brillo', 'Antifrote semimate', 'Sobreimprimible'];
 const SENTIDOS = ['1', '2', '3', '4'];
@@ -223,6 +224,7 @@ async function cargarProductos() {
   document.getElementById('empty-state').style.display = productos.length ? 'none' : 'block';
   tbody.innerHTML = productos.map(p => `
     <tr>
+      <td>${fechaCorta(p.created_at)}</td>
       <td>${p.codigo ? `<code style="font-size:12px;background:#f0f2f5;padding:2px 6px;border-radius:4px">${esc(p.codigo)}</code>` : '–'}</td>
       <td>${esc(p.tecnologia) || '–'}</td>
       <td><strong>${esc(p.cliente)}</strong></td>
@@ -258,7 +260,7 @@ async function editarProducto(id) {
   limpiarForm();
   document.getElementById('producto-id').value = p.id;
   document.getElementById('modal-title').textContent = 'Editar Producto';
-  document.getElementById('codigo-producto').innerHTML = p.codigo ? 'Código: <b style="font-size:15px">' + esc(p.codigo) + '</b> (no cambia al editar)' : 'Este producto no tiene código (se creó antes de que existiera).';
+  document.getElementById('codigo-producto').innerHTML = p.codigo ? 'Código: <b style="font-size:15px">' + esc(p.codigo) + '</b> (no cambia al editar) · Creado el ' + fechaCorta(p.created_at) : 'Este producto no tiene código (se creó antes de que existiera).';
   CAMPOS_TEXTO.forEach(k => document.getElementById(k).value = p[k] ?? '');
   CAMPOS_SELECT.forEach(k => document.getElementById(k).value = p[k] ?? '');
   armarTintas(p.tintas || []);
