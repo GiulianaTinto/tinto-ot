@@ -66,6 +66,50 @@ CREATE TABLE IF NOT EXISTS ordenes (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Listas desplegables administrables (papel, troquel, serigrafía, stamping marca/cuño, relieve)
+CREATE TABLE IF NOT EXISTS catalogos (
+  id SERIAL PRIMARY KEY,
+  tipo TEXT NOT NULL,
+  nombre TEXT NOT NULL,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  UNIQUE (tipo, nombre)
+);
+
+CREATE TABLE IF NOT EXISTS productos (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE,                       -- reservado: la generación del código se define más adelante
+  cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+  marca TEXT,
+  detalle TEXT,                             -- detalle / varietal
+  tipo_etiqueta TEXT,
+  mercado TEXT,
+  papel_id INTEGER REFERENCES catalogos(id),
+  papel_alt_id INTEGER REFERENCES catalogos(id),   -- papel alternativo (opcional, cuando el liner es indiferente)
+  liner TEXT,                               -- 'Pet / Glassine' | 'Pet' | 'Glassine'
+  troquel_id INTEGER REFERENCES catalogos(id),
+  ancho NUMERIC,
+  alto NUMERIC,
+  gap_avance NUMERIC,
+  gap_alto NUMERIC,
+  rep_avance INTEGER,
+  filas INTEGER,
+  ancho_sustrato NUMERIC,
+  sentido_bobinado SMALLINT,                -- 1 a 4
+  max_etiquetas_rollo INTEGER,
+  tintas JSONB DEFAULT '[]',                -- hasta 8 nombres
+  barniz TEXT,
+  serigrafia_id INTEGER REFERENCES catalogos(id),
+  stamping_marca_id INTEGER REFERENCES catalogos(id),
+  stamping_cuno_id INTEGER REFERENCES catalogos(id),
+  relieve BOOLEAN NOT NULL DEFAULT false,
+  relieve_id INTEGER REFERENCES catalogos(id),
+  anada TEXT,                               -- datos variables
+  cubicacion TEXT,
+  alcohol TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Usuario admin inicial (contraseña: admin1234)
 INSERT INTO usuarios (nombre, email, password, rol)
 VALUES ('Administrador', 'admin@tintolabels.com', '$2b$10$EcXvv.7U3.MjNth8dEgkA.FAayPQZl9HfERllott3OrvZjarwD7z2', 'ADMIN')
