@@ -66,7 +66,7 @@
   <table>
     <thead>
       <tr>
-        <th>Código</th><th>Cliente</th><th>Marca</th><th>Detalle / Varietal</th><th>Tipo</th><th>Papel</th><th>Troquel</th><th>Acciones</th>
+        <th>Código</th><th>Tecnología</th><th>Cliente</th><th>Marca</th><th>Detalle / Varietal</th><th>Tipo</th><th>Papel</th><th>Troquel</th><th>Acciones</th>
       </tr>
     </thead>
     <tbody id="tabla-productos"></tbody>
@@ -85,6 +85,11 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="producto-id">
+
+      <div class="seccion">Tecnología</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Tecnología de impresión *</label><select id="tecnologia"></select></div>
+      </div>
 
       <div class="seccion">Identificación</div>
       <div class="form-grid">
@@ -158,10 +163,11 @@
 <script>
 const TIPOS_ETIQUETA = ['Frente', 'Contra', 'Medalla', 'Collarín', 'Otro'];
 const LINERS = ['Pet / Glassine', 'Pet', 'Glassine'];
+const TECNOLOGIAS = ['Flexografía', 'Digital'];
 const BARNICES = ['Antifrote mate', 'Antifrote brillo', 'Antifrote semimate', 'Sobreimprimible'];
 const SENTIDOS = ['1', '2', '3', '4'];
 const CAMPOS_TEXTO = ['marca','detalle','mercado','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','max_etiquetas_rollo','anada','cubicacion','alcohol','observaciones'];
-const CAMPOS_SELECT = ['cliente_id','tipo_etiqueta','papel_id','papel_alt_id','liner','troquel_id','sentido_bobinado','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve_id'];
+const CAMPOS_SELECT = ['tecnologia','cliente_id','tipo_etiqueta','papel_id','papel_alt_id','liner','troquel_id','sentido_bobinado','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve_id'];
 const CATALOGO_DE = { papel_id:'papel', papel_alt_id:'papel', serigrafia_id:'serigrafia', stamping_marca_id:'stamping_marca' };
 let catalogos = [];
 let clientes = [];
@@ -181,6 +187,7 @@ function armarSelects(seleccion = {}) {
   // en edición se mantiene visible la opción ya elegida aunque se haya desactivado
   document.getElementById('cliente_id').innerHTML = opciones(clientes.map(c => [c.id, c.nombre]));
   document.getElementById('tipo_etiqueta').innerHTML = opciones(TIPOS_ETIQUETA.map(t => [t, t]));
+  document.getElementById('tecnologia').innerHTML = opciones(TECNOLOGIAS.map(t => [t, t]));
   document.getElementById('liner').innerHTML = opciones(LINERS.map(t => [t, t]));
   document.getElementById('barniz').innerHTML = opciones(BARNICES.map(t => [t, t]));
   document.getElementById('sentido_bobinado').innerHTML = opciones(SENTIDOS.map(t => [t, t]));
@@ -216,6 +223,7 @@ async function cargarProductos() {
   tbody.innerHTML = productos.map(p => `
     <tr>
       <td>${p.codigo ? `<code style="font-size:12px;background:#f0f2f5;padding:2px 6px;border-radius:4px">${esc(p.codigo)}</code>` : '–'}</td>
+      <td>${esc(p.tecnologia) || '–'}</td>
       <td><strong>${esc(p.cliente)}</strong></td>
       <td>${esc(p.marca) || '–'}</td>
       <td>${esc(p.detalle) || '–'}</td>
@@ -259,6 +267,7 @@ async function guardarProducto() {
   const data = {};
   [...CAMPOS_TEXTO, ...CAMPOS_SELECT].forEach(k => data[k] = document.getElementById(k).value);
   data.tintas = [...document.querySelectorAll('.tinta')].map(i => i.value.trim()).filter(Boolean);
+  if (!data.tecnologia) { alert('La tecnología es obligatoria'); return; }
   if (!data.cliente_id) { alert('El cliente es obligatorio'); return; }
   const res = await fetch(id ? `/api/productos/${id}` : '/api/productos', {
     method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
