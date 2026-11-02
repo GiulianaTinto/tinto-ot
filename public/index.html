@@ -1229,7 +1229,7 @@ async function initSesion() {
   nav.innerHTML = `<a href="/clientes.html" style="${linkStyle}">👥 Clientes</a>`;
   nav.innerHTML += `<a href="/calculadora.html" style="${linkStyle}">🧮 Calculadoras</a>`;
   if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/usuarios.html" style="${linkStyle}">⚙ Usuarios</a>`;
-  if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/productos.html" style="${linkStyle}">🏷 Productos</a><a href="/catalogos.html" style="${linkStyle}">📚 Catálogos</a><a href="/troqueles.html" style="${linkStyle}">✂ Troqueles</a><a href="/cunos.html" style="${linkStyle}">🔖 Cuños</a>`;
+  if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/productos.html" style="${linkStyle}">🏷 Productos</a><a href="/insumos.html" style="${linkStyle}">🧰 Insumos y herramentales</a>`;
 
   // Ocultar botón Nueva OT si no tiene permiso
   if (!PUEDE_EDITAR.includes(usuarioActual.rol)) {
