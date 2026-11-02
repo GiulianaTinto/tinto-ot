@@ -241,6 +241,7 @@ async function initSesion() {
   const nav = document.getElementById('nav-links');
   nav.innerHTML = `<a href="/" style="${linkStyle}">← Órdenes</a>`;
   if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/usuarios.html" style="${linkStyle}">⚙ Usuarios</a>`;
+  if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/productos.html" style="${linkStyle}">🏷 Productos</a><a href="/catalogos.html" style="${linkStyle}">📚 Catálogos</a>`;
   if (!PUEDE_EDITAR_CLIENTES.includes(usuarioActual.rol)) {
     document.querySelector('.btn-primary[onclick="nuevoCliente()"]')?.remove();
   }
