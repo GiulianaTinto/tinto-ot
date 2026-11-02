@@ -183,7 +183,7 @@ function armarSelects(seleccion = {}) {
   document.getElementById('sentido_bobinado').innerHTML = opciones(SENTIDOS.map(t => [t, t]));
   document.getElementById('troquel_id').innerHTML = opciones(troqueles.filter(t => t.activo || t.id === seleccion.troquel_id).map(t => [t.id, t.codigo + ' (' + t.tipo + ')' + (t.activo ? '' : ' (inactivo)')]));
   // stamping: tipo con ST; relieve: tipo con REL; los que no tienen tipo definido aparecen en ambos
-  const etiquetaCuno = c => c.codigo + (c.producto ? ' · ' + c.producto : '') + (c.cliente ? ' (' + c.cliente + ')' : '') + (c.activo ? '' : ' (inactivo)');
+  const etiquetaCuno = c => c.codigo + (c.activo ? '' : ' (inactivo)');
   const cunosPara = (campo, marca, otra) => cunos.filter(c => c.activo || c.id === seleccion[campo]).filter(c => { const t = (c.tipo || '').toUpperCase(); return t.includes(marca) || !t.includes(otra); });
   document.getElementById('stamping_cuno_id').innerHTML = opciones(cunosPara('stamping_cuno_id', 'ST', 'REL').map(c => [c.id, etiquetaCuno(c)]));
   document.getElementById('relieve_id').innerHTML = opciones(cunosPara('relieve_id', 'REL', 'ST').map(c => [c.id, etiquetaCuno(c)]));
