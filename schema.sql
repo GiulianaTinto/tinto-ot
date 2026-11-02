@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS ordenes (
   tipo_etiqueta TEXT,
   anio TEXT,
   alcohol TEXT,
+  observaciones TEXT,
   contenido TEXT,
   pais_importador TEXT,
   desarrollo TEXT DEFAULT 'NUEVO',
