@@ -93,6 +93,22 @@ CREATE TABLE IF NOT EXISTS troqueles (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS cunos (
+  id SERIAL PRIMARY KEY,
+  codigo TEXT UNIQUE NOT NULL,
+  tipo TEXT,                  -- ST, REL, ST-REL, BAJOREL, MICROREL...
+  cliente TEXT,
+  producto TEXT,
+  tipo_etiqueta TEXT,
+  material TEXT,
+  imagenes INTEGER,
+  observaciones TEXT,
+  contraparte TEXT,
+  nombre TEXT,
+  activo BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS productos (
   id SERIAL PRIMARY KEY,
   codigo TEXT UNIQUE,                       -- reservado: la generación del código se define más adelante
@@ -118,9 +134,9 @@ CREATE TABLE IF NOT EXISTS productos (
   barniz TEXT,
   serigrafia_id INTEGER REFERENCES catalogos(id),
   stamping_marca_id INTEGER REFERENCES catalogos(id),
-  stamping_cuno_id INTEGER REFERENCES catalogos(id),
+  stamping_cuno_id INTEGER REFERENCES cunos(id),
   relieve BOOLEAN NOT NULL DEFAULT false,
-  relieve_id INTEGER REFERENCES catalogos(id),
+  relieve_id INTEGER REFERENCES cunos(id),
   anada TEXT,                               -- datos variables
   cubicacion TEXT,
   alcohol TEXT,
