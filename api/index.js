@@ -163,14 +163,14 @@ const num = v => (v === '' || v == null || isNaN(Number(v))) ? null : Number(v);
 const idOrNull = v => (v === '' || v == null) ? null : parseInt(v);
 function valoresProducto(d) {
   const tintas = (Array.isArray(d.tintas) ? d.tintas : []).map(t => String(t || '').trim()).filter(Boolean).slice(0, 8);
-  const relieve = d.relieve === true || d.relieve === 'si';
+  const relieve = idOrNull(d.relieve_id) != null;   // lleva relieve si se eligió un cuño
   return [
     idOrNull(d.cliente_id), d.marca, d.detalle, d.tipo_etiqueta, d.mercado,
     idOrNull(d.papel_id), idOrNull(d.papel_alt_id), d.liner, idOrNull(d.troquel_id),
     num(d.ancho), num(d.alto), num(d.gap_avance), num(d.gap_alto), num(d.rep_avance), num(d.filas), num(d.ancho_sustrato),
     num(d.sentido_bobinado), num(d.max_etiquetas_rollo),
     JSON.stringify(tintas), d.barniz,
-    idOrNull(d.serigrafia_id), idOrNull(d.stamping_marca_id), idOrNull(d.stamping_cuno_id), relieve, relieve ? idOrNull(d.relieve_id) : null,
+    idOrNull(d.serigrafia_id), idOrNull(d.stamping_marca_id), idOrNull(d.stamping_cuno_id), relieve, idOrNull(d.relieve_id),
     d.anada, d.cubicacion, d.alcohol
   ];
 }
