@@ -97,7 +97,7 @@
         <div class="form-group"><label>Cliente *</label><select id="cliente_id"></select></div>
         <div class="form-group"><label>Marca *</label><input type="text" id="marca"></div>
         <div class="form-group"><label>Detalle / Varietal *</label><input type="text" id="detalle"></div>
-        <div class="form-group"><label>Tipo de etiqueta</label>
+        <div class="form-group"><label>Tipo de etiqueta *</label>
           <select id="tipo_etiqueta"></select></div>
         <div class="form-group"><label>Mercado</label><input type="text" id="mercado"></div>
       </div>
@@ -162,7 +162,7 @@
 </div>
 
 <script>
-const TIPOS_ETIQUETA = ['Frente', 'Contra', 'Medalla', 'Collarín', 'Otro'];
+const TIPOS_ETIQUETA = ['Frente', 'Contra', 'Medalla', 'Collarín', 'Sticker', 'Faja'];
 const LINERS = ['Pet / Glassine', 'Pet', 'Glassine'];
 const TECNOLOGIAS = ['Flexografía', 'Digital'];
 const BARNICES = ['Antifrote mate', 'Antifrote brillo', 'Antifrote semimate', 'Sobreimprimible'];
@@ -248,7 +248,7 @@ async function nuevoProducto() {
   armarSelects();
   limpiarForm();
   document.getElementById('modal-title').textContent = 'Nuevo Producto';
-  document.getElementById('codigo-producto').innerHTML = 'El código se genera automáticamente al guardar: <b>CLIENTE-MARCA-DETALLE-AÑADA-CUBICACIÓN-ALCOHOL-VERSIÓN</b>';
+  document.getElementById('codigo-producto').innerHTML = 'El código se genera automáticamente al guardar: <b>CLIENTE-MARCA-DETALLE-TIPO-AÑADA-CUBICACIÓN-ALCOHOL-VERSIÓN</b>';
   document.getElementById('modal-overlay').classList.add('active');
 }
 async function editarProducto(id) {
@@ -273,6 +273,7 @@ async function guardarProducto() {
   if (!data.tecnologia) { alert('La tecnología es obligatoria'); return; }
   if (!data.cliente_id) { alert('El cliente es obligatorio'); return; }
   if (!id && (!data.marca.trim() || !data.detalle.trim())) { alert('Marca y Detalle / Varietal son obligatorios para generar el código'); return; }
+  if (!id && !data.tipo_etiqueta) { alert('El Tipo de etiqueta es obligatorio para generar el código'); return; }
   const res = await fetch(id ? `/api/productos/${id}` : '/api/productos', {
     method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
   });
