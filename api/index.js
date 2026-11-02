@@ -192,12 +192,26 @@ app.get('/api/productos/:id', solo('ADMIN'), async (req, res) => {
 app.post('/api/productos', solo('ADMIN'), async (req, res) => {
   const d = req.body;
   if (!idOrNull(d.cliente_id)) return res.status(400).json({ error: 'El cliente es obligatorio' });
+  // Código: CLIENTE(6)-MARCA(3)-DETALLE(10)-CUBICACIÓN(4)-VERSIÓN(3). Se genera al crear y no cambia al editar.
+  const limpio = (s, n) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, n).padEnd(n, 'X');
+  const { rows: cli } = await pool.query('SELECT codigo_cliente FROM clientes WHERE id=$1', [idOrNull(d.cliente_id)]);
+  if (!cli[0]?.codigo_cliente) return res.status(400).json({ error: 'El cliente no tiene Código Cliente: cargalo en Clientes para poder generar el código del producto' });
+  if (!String(d.marca || '').trim() || !String(d.detalle || '').trim()) return res.status(400).json({ error: 'Marca y Detalle / Varietal son obligatorios para generar el código' });
+  const cubicacion = String(d.cubicacion || '').replace(/\D/g, '').slice(0, 4).padStart(4, '0');
+  const base = [limpio(cli[0].codigo_cliente, 6), limpio(d.marca, 3), limpio(d.detalle, 10), cubicacion].join('-');
   try {
-    const { rows } = await pool.query(
-      `INSERT INTO productos (${COLS_PRODUCTO.join(',')}) VALUES (${COLS_PRODUCTO.map((_, i) => '$' + (i + 1)).join(',')}) RETURNING id`,
-      valoresProducto(d)
-    );
-    res.json({ id: rows[0].id });
+    for (let intento = 0; intento < 5; intento++) {
+      const { rows: v } = await pool.query('SELECT COALESCE(MAX(RIGHT(codigo, 3)::int), 0) + 1 AS n FROM productos WHERE codigo LIKE $1', [base + '-%']);
+      const codigo = base + '-' + String(v[0].n).padStart(3, '0');
+      try {
+        const { rows } = await pool.query(
+          `INSERT INTO productos (codigo,${COLS_PRODUCTO.join(',')}) VALUES ($${COLS_PRODUCTO.length + 1},${COLS_PRODUCTO.map((_, i) => '$' + (i + 1)).join(',')}) RETURNING id`,
+          [...valoresProducto(d), codigo]
+        );
+        return res.json({ id: rows[0].id, codigo });
+      } catch(e) { if (e.code !== '23505') throw e; }   // otro alta simultánea tomó ese código: reintenta con el siguiente
+    }
+    res.status(409).json({ error: 'No se pudo generar un código único, intentá de nuevo' });
   } catch(e) { res.status(400).json({ error: e.message }); }
 });
 app.put('/api/productos/:id', solo('ADMIN'), async (req, res) => {
