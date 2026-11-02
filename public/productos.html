@@ -85,6 +85,7 @@
     </div>
     <div class="modal-body">
       <input type="hidden" id="producto-id">
+      <div id="codigo-producto" style="margin-bottom:16px;padding:10px 14px;background:#f0f2f5;border-radius:8px;font-size:13px;color:#555"></div>
 
       <div class="seccion">Tecnología</div>
       <div class="form-grid">
@@ -94,8 +95,8 @@
       <div class="seccion">Identificación</div>
       <div class="form-grid">
         <div class="form-group"><label>Cliente *</label><select id="cliente_id"></select></div>
-        <div class="form-group"><label>Marca</label><input type="text" id="marca"></div>
-        <div class="form-group"><label>Detalle / Varietal</label><input type="text" id="detalle"></div>
+        <div class="form-group"><label>Marca *</label><input type="text" id="marca"></div>
+        <div class="form-group"><label>Detalle / Varietal *</label><input type="text" id="detalle"></div>
         <div class="form-group"><label>Tipo de etiqueta</label>
           <select id="tipo_etiqueta"></select></div>
         <div class="form-group"><label>Mercado</label><input type="text" id="mercado"></div>
@@ -247,6 +248,7 @@ async function nuevoProducto() {
   armarSelects();
   limpiarForm();
   document.getElementById('modal-title').textContent = 'Nuevo Producto';
+  document.getElementById('codigo-producto').innerHTML = 'El código se genera automáticamente al guardar: <b>CLIENTE-MARCA-DETALLE-CUBICACIÓN-VERSIÓN</b>';
   document.getElementById('modal-overlay').classList.add('active');
 }
 async function editarProducto(id) {
@@ -256,6 +258,7 @@ async function editarProducto(id) {
   limpiarForm();
   document.getElementById('producto-id').value = p.id;
   document.getElementById('modal-title').textContent = 'Editar Producto';
+  document.getElementById('codigo-producto').innerHTML = p.codigo ? 'Código: <b style="font-size:15px">' + esc(p.codigo) + '</b> (no cambia al editar)' : 'Este producto no tiene código (se creó antes de que existiera).';
   CAMPOS_TEXTO.forEach(k => document.getElementById(k).value = p[k] ?? '');
   CAMPOS_SELECT.forEach(k => document.getElementById(k).value = p[k] ?? '');
   armarTintas(p.tintas || []);
@@ -269,12 +272,14 @@ async function guardarProducto() {
   data.tintas = [...document.querySelectorAll('.tinta')].map(i => i.value.trim()).filter(Boolean);
   if (!data.tecnologia) { alert('La tecnología es obligatoria'); return; }
   if (!data.cliente_id) { alert('El cliente es obligatorio'); return; }
+  if (!id && (!data.marca.trim() || !data.detalle.trim())) { alert('Marca y Detalle / Varietal son obligatorios para generar el código'); return; }
   const res = await fetch(id ? `/api/productos/${id}` : '/api/productos', {
     method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
   });
   const json = await res.json();
   if (json.error) { alert('Error: ' + json.error); return; }
   cerrarModal();
+  if (!id && json.codigo) alert('Producto creado. Código: ' + json.codigo);
   cargarProductos();
 }
 async function eliminarProducto(id) {
