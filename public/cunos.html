@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Cuños</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  .toolbar { background: white; padding: 14px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #ddd; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+  .toolbar input { width: 320px; }
+  .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-secondary { background: #2c3e50; color: white; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .container { padding: 24px; overflow-x: auto; }
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
+  th { background: #1a1a2e; color: white; padding: 12px 10px; text-align: left; font-size: 12px; white-space: nowrap; }
+  td { padding: 10px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+  tr.inactivo td { color: #aaa; }
+  .empty-state { text-align: center; padding: 60px; color: #999; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; padding: 20px; }
+  .modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+  .modal { background: white; border-radius: 12px; width: 100%; max-width: 760px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { background: #1a1a2e; color: white; padding: 18px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group.dos { grid-column: span 2; }
+  .form-group label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; font-family: Arial, sans-serif; background: white; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: 2px solid #c0392b; border-color: transparent; }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🔖 Cuños</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <nav id="nav-links"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="buscar" placeholder="🔍 Buscar por código, cliente o producto..." oninput="filtrar()">
+  <select id="filtro-uso" onchange="filtrar()">
+    <option value="">Todos los cuños</option>
+    <option value="ST">Con stamping (ST)</option>
+    <option value="REL">Con relieve (REL)</option>
+  </select>
+  <button class="btn btn-primary" onclick="nuevo()">+ Nuevo Cuño</button>
+  <span id="contador" style="font-size:13px;color:#777"></span>
+</div>
+
+<div class="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th><th>Tipo</th><th>Cliente</th><th>Producto</th><th>Tipo etiq.</th><th>Material</th>
+        <th>Imág.</th><th>Contraparte</th><th>Observaciones</th><th>Estado</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla"></tbody>
+  </table>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <h3>No hay cuños</h3>
+    <p>Probá con otra búsqueda o agregá uno con "Nuevo Cuño".</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nuevo Cuño</h2>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cuno-id">
+      <div class="form-grid">
+        <div class="form-group"><label>Código *</label><input type="text" id="codigo" placeholder="CU001642"></div>
+        <div class="form-group"><label>Tipo</label><input type="text" id="tipo" placeholder="ST, REL, ST-REL..."></div>
+        <div class="form-group"><label>Estado</label>
+          <select id="activo"><option value="si">Activo</option><option value="no">Inactivo</option></select></div>
+        <div class="form-group"><label>Cliente</label><input type="text" id="cliente"></div>
+        <div class="form-group dos"><label>Producto</label><input type="text" id="producto"></div>
+        <div class="form-group"><label>Tipo de etiqueta</label><input type="text" id="tipo_etiqueta" placeholder="FR, CTR, CLL..."></div>
+        <div class="form-group"><label>Material</label><input type="text" id="material" placeholder="LATON, MAGNESIO..."></div>
+        <div class="form-group"><label>Imágenes</label><input type="number" step="1" id="imagenes"></div>
+        <div class="form-group"><label>Contraparte</label><input type="text" id="contraparte"></div>
+        <div class="form-group dos"><label>Nombre</label><input type="text" id="nombre"></div>
+        <div class="form-group full"><label>Comb. ST-REL / Observaciones</label><textarea id="observaciones" rows="3"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardar()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAMPOS = ['codigo','tipo','cliente','producto','tipo_etiqueta','material','imagenes','contraparte','nombre','observaciones'];
+const MAX_FILAS = 300;
+let todos = [];
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const v = x => x == null || x === '' ? '–' : esc(x);
+
+async function cargar() {
+  todos = await fetch('/api/cunos').then(r => r.json());
+  filtrar();
+}
+function filtrar() {
+  const q = document.getElementById('buscar').value.trim().toLowerCase();
+  const uso = document.getElementById('filtro-uso').value;
+  const lista = todos.filter(c => {
+    if (uso && !(c.tipo || '').toUpperCase().includes(uso)) return false;
+    return !q || [c.codigo, c.cliente, c.producto, c.nombre].some(x => (x || '').toLowerCase().includes(q));
+  });
+  const mostrar = lista.slice(0, MAX_FILAS);
+  document.getElementById('empty-state').style.display = lista.length ? 'none' : 'block';
+  document.getElementById('contador').textContent = lista.length > MAX_FILAS
+    ? `Mostrando ${MAX_FILAS} de ${lista.length} cuños — afiná la búsqueda para ver el resto`
+    : lista.length + ' cuños';
+  document.getElementById('tabla').innerHTML = mostrar.map(c => `
+    <tr class="${c.activo ? '' : 'inactivo'}">
+      <td><strong>${esc(c.codigo)}</strong></td><td>${v(c.tipo)}</td><td>${v(c.cliente)}</td><td>${v(c.producto)}</td>
+      <td>${v(c.tipo_etiqueta)}</td><td>${v(c.material)}</td><td>${v(c.imagenes)}</td><td>${v(c.contraparte)}</td>
+      <td style="max-width:260px">${v(c.observaciones)}</td>
+      <td>${c.activo ? 'Activo' : 'Inactivo'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-info btn-sm" onclick="editar(${c.id})">✏ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminar(${c.id})">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+function limpiar() {
+  document.getElementById('cuno-id').value = '';
+  CAMPOS.forEach(k => document.getElementById(k).value = '');
+  document.getElementById('activo').value = 'si';
+}
+function nuevo() {
+  limpiar();
+  document.getElementById('modal-title').textContent = 'Nuevo Cuño';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+function editar(id) {
+  const c = todos.find(x => x.id === id);
+  limpiar();
+  document.getElementById('cuno-id').value = c.id;
+  document.getElementById('modal-title').textContent = 'Editar Cuño';
+  CAMPOS.forEach(k => document.getElementById(k).value = c[k] ?? '');
+  document.getElementById('activo').value = c.activo ? 'si' : 'no';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+async function guardar() {
+  const id = document.getElementById('cuno-id').value;
+  const data = {};
+  CAMPOS.forEach(k => data[k] = document.getElementById(k).value);
+  data.activo = document.getElementById('activo').value === 'si';
+  if (!data.codigo.trim()) { alert('El código es obligatorio'); return; }
+  const res = await fetch(id ? `/api/cunos/${id}` : '/api/cunos', {
+    method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarModal();
+  cargar();
+}
+async function eliminar(id) {
+  const c = todos.find(x => x.id === id);
+  if (!confirm(`¿Eliminar el cuño "${c.codigo}"? Esta acción no se puede deshacer.`)) return;
+  const json = await fetch(`/api/cunos/${id}`, { method: 'DELETE' }).then(r => r.json());
+  if (json.error) alert(json.error);
+  cargar();
+}
+function cerrarModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) cerrarModal(); });
+
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const u = await res.json();
+  if (u.rol !== 'ADMIN') { window.location.href = '/'; return; }
+  document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
+  const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  document.getElementById('nav-links').innerHTML =
+    `<a href="/" style="${s}">← Órdenes</a><a href="/productos.html" style="${s}">🏷 Productos</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a><a href="/troqueles.html" style="${s}">✂ Troqueles</a>`;
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+initSesion();
+cargar();
+</script>
+</body>
+</html>
