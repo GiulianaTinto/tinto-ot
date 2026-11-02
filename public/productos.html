@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tinto Labels – Productos</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f0f2f5; color: #222; }
+  header { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 20px; font-weight: 700; }
+  .toolbar { background: white; padding: 14px 24px; display: flex; gap: 12px; align-items: center; border-bottom: 1px solid #ddd; }
+  .toolbar input { padding: 8px 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; width: 320px; }
+  .btn { padding: 9px 18px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: #c0392b; color: white; }
+  .btn-secondary { background: #2c3e50; color: white; }
+  .btn-danger { background: #e74c3c; color: white; }
+  .btn-info { background: #2980b9; color: white; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .container { padding: 24px; }
+  table { width: 100%; background: white; border-radius: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); border-collapse: collapse; overflow: hidden; }
+  th { background: #1a1a2e; color: white; padding: 12px 14px; text-align: left; font-size: 13px; }
+  td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid #f0f0f0; }
+  tr:hover td { background: #fafafa; }
+  .empty-state { text-align: center; padding: 60px; color: #999; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; overflow-y: auto; padding: 20px; }
+  .modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+  .modal { background: white; border-radius: 12px; width: 100%; max-width: 860px; margin: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { background: #1a1a2e; color: white; padding: 18px 24px; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: center; }
+  .modal-header h2 { font-size: 18px; }
+  .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
+  .modal-body { padding: 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; gap: 10px; justify-content: flex-end; }
+
+  .seccion { font-size: 13px; font-weight: 700; color: #c0392b; text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 10px; padding-bottom: 5px; border-bottom: 2px solid #f0f0f0; }
+  .seccion:first-child { margin-top: 0; }
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: 1 / -1; }
+  .form-group.dos { grid-column: span 2; }
+  .form-group label { font-size: 12px; font-weight: 700; color: #555; text-transform: uppercase; }
+  .form-group input, .form-group select { padding: 9px 11px; border: 1px solid #d0d0d0; border-radius: 6px; font-size: 14px; font-family: Arial, sans-serif; background: white; }
+  .form-group input:focus, .form-group select:focus { outline: 2px solid #c0392b; border-color: transparent; }
+  .tintas-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  @media (max-width: 700px) { .form-grid { grid-template-columns: 1fr 1fr; } .tintas-grid { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🏷 Productos</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <nav id="nav-links"></nav>
+    <span id="user-label" style="font-size:13px;color:#ccc"></span>
+    <button onclick="logout()" style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:13px">Salir</button>
+  </div>
+</header>
+
+<div class="toolbar">
+  <input type="text" id="buscar" placeholder="🔍 Buscar por cliente, marca o detalle..." oninput="cargarProductos()">
+  <button class="btn btn-primary" onclick="nuevoProducto()">+ Nuevo Producto</button>
+</div>
+
+<div class="container">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th><th>Cliente</th><th>Marca</th><th>Detalle / Varietal</th><th>Tipo</th><th>Papel</th><th>Troquel</th><th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-productos"></tbody>
+  </table>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <h3>No hay productos registrados</h3>
+    <p>Hacé clic en "Nuevo Producto" para agregar el primero.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Nuevo Producto</h2>
+      <button class="modal-close" onclick="cerrarModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="producto-id">
+
+      <div class="seccion">Identificación</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Cliente *</label><select id="cliente_id"></select></div>
+        <div class="form-group"><label>Marca</label><input type="text" id="marca"></div>
+        <div class="form-group"><label>Detalle / Varietal</label><input type="text" id="detalle"></div>
+        <div class="form-group"><label>Tipo de etiqueta</label>
+          <select id="tipo_etiqueta"></select></div>
+        <div class="form-group"><label>Mercado</label><input type="text" id="mercado"></div>
+      </div>
+
+      <div class="seccion">Sustrato</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Papel</label><select id="papel_id"></select></div>
+        <div class="form-group"><label>Papel alternativo (opcional)</label><select id="papel_alt_id"></select></div>
+        <div class="form-group"><label>Tipo de liner</label><select id="liner"></select></div>
+      </div>
+
+      <div class="seccion">Formato</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Troquel</label><select id="troquel_id"></select></div>
+        <div class="form-group"><label>Ancho (mm)</label><input type="number" step="any" id="ancho"></div>
+        <div class="form-group"><label>Alto (mm)</label><input type="number" step="any" id="alto"></div>
+        <div class="form-group"><label>Gap avance (mm)</label><input type="number" step="any" id="gap_avance"></div>
+        <div class="form-group"><label>Gap alto (mm)</label><input type="number" step="any" id="gap_alto"></div>
+        <div class="form-group"><label>Repeticiones al avance</label><input type="number" step="1" id="rep_avance"></div>
+        <div class="form-group"><label>Filas</label><input type="number" step="1" id="filas"></div>
+        <div class="form-group"><label>Ancho sustrato (mm)</label><input type="number" step="any" id="ancho_sustrato"></div>
+      </div>
+
+      <div class="seccion">Bobinado</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Sentido de bobinado</label><select id="sentido_bobinado"></select></div>
+        <div class="form-group"><label>Cant. máx. de etiquetas por rollo</label><input type="number" step="1" id="max_etiquetas_rollo"></div>
+      </div>
+
+      <div class="seccion">Impresión</div>
+      <div class="form-group" style="margin-bottom:14px">
+        <label>Tintas (hasta 8, solo nombre)</label>
+        <div class="tintas-grid" id="tintas-grid"></div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group"><label>Barniz de terminación</label><select id="barniz"></select></div>
+      </div>
+
+      <div class="seccion">Acabados</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Serigrafía</label><select id="serigrafia_id"></select></div>
+        <div class="form-group"><label>Stamping – Marca</label><select id="stamping_marca_id"></select></div>
+        <div class="form-group"><label>Stamping – Cuño</label><select id="stamping_cuno_id"></select></div>
+        <div class="form-group"><label>Relieve</label>
+          <select id="relieve" onchange="alternarRelieve()"><option value="no">NO</option><option value="si">SI</option></select></div>
+        <div class="form-group" id="relieve-opcion" style="display:none"><label>Opción de relieve</label><select id="relieve_id"></select></div>
+      </div>
+
+      <div class="seccion">Datos variables</div>
+      <div class="form-grid">
+        <div class="form-group"><label>Añada</label><input type="text" id="anada"></div>
+        <div class="form-group"><label>Cubicación</label><input type="text" id="cubicacion"></div>
+        <div class="form-group"><label>Alcohol</label><input type="text" id="alcohol"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarProducto()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const TIPOS_ETIQUETA = ['Frente', 'Contra', 'Medalla', 'Collarín', 'Otro'];
+const LINERS = ['Pet / Glassine', 'Pet', 'Glassine'];
+const BARNICES = ['Antifrote mate', 'Antifrote brillo', 'Antifrote semimate', 'Sobreimprimible'];
+const SENTIDOS = ['1', '2', '3', '4'];
+const CAMPOS_TEXTO = ['marca','detalle','mercado','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','max_etiquetas_rollo','anada','cubicacion','alcohol'];
+const CAMPOS_SELECT = ['cliente_id','tipo_etiqueta','papel_id','papel_alt_id','liner','troquel_id','sentido_bobinado','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve_id'];
+const CATALOGO_DE = { papel_id:'papel', papel_alt_id:'papel', troquel_id:'troquel', serigrafia_id:'serigrafia', stamping_marca_id:'stamping_marca', stamping_cuno_id:'stamping_cuno', relieve_id:'relieve' };
+let catalogos = [];
+let clientes = [];
+
+function esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function opciones(lista, vacio = '— Seleccionar —') {
+  return `<option value="">${vacio}</option>` + lista.map(([v, t]) => `<option value="${esc(v)}">${esc(t)}</option>`).join('');
+}
+
+async function cargarListas() {
+  const [cat, cli] = await Promise.all([fetch('/api/catalogos').then(r => r.json()), fetch('/api/clientes').then(r => r.json())]);
+  catalogos = cat; clientes = cli;
+}
+function armarSelects(seleccion = {}) {
+  // en edición se mantiene visible la opción ya elegida aunque se haya desactivado
+  document.getElementById('cliente_id').innerHTML = opciones(clientes.map(c => [c.id, c.nombre]));
+  document.getElementById('tipo_etiqueta').innerHTML = opciones(TIPOS_ETIQUETA.map(t => [t, t]));
+  document.getElementById('liner').innerHTML = opciones(LINERS.map(t => [t, t]));
+  document.getElementById('barniz').innerHTML = opciones(BARNICES.map(t => [t, t]));
+  document.getElementById('sentido_bobinado').innerHTML = opciones(SENTIDOS.map(t => [t, t]));
+  for (const [campo, tipo] of Object.entries(CATALOGO_DE)) {
+    const lista = catalogos.filter(i => i.tipo === tipo && (i.activo || i.id === seleccion[campo]));
+    document.getElementById(campo).innerHTML = opciones(lista.map(i => [i.id, i.nombre + (i.activo ? '' : ' (inactivo)')]));
+  }
+}
+function alternarRelieve() {
+  document.getElementById('relieve-opcion').style.display = document.getElementById('relieve').value === 'si' ? '' : 'none';
+}
+function armarTintas(tintas = []) {
+  document.getElementById('tintas-grid').innerHTML = Array.from({ length: 8 }, (_, i) =>
+    `<input type="text" class="tinta" placeholder="Tinta ${i + 1}" value="${esc(tintas[i] || '')}" style="padding:9px 11px;border:1px solid #d0d0d0;border-radius:6px;font-size:14px">`).join('');
+}
+
+async function cargarProductos() {
+  const q = document.getElementById('buscar').value;
+  const res = await fetch('/api/productos' + (q ? '?q=' + encodeURIComponent(q) : ''));
+  const productos = await res.json();
+  const tbody = document.getElementById('tabla-productos');
+  document.getElementById('empty-state').style.display = productos.length ? 'none' : 'block';
+  tbody.innerHTML = productos.map(p => `
+    <tr>
+      <td>${p.codigo ? `<code style="font-size:12px;background:#f0f2f5;padding:2px 6px;border-radius:4px">${esc(p.codigo)}</code>` : '–'}</td>
+      <td><strong>${esc(p.cliente)}</strong></td>
+      <td>${esc(p.marca) || '–'}</td>
+      <td>${esc(p.detalle) || '–'}</td>
+      <td>${esc(p.tipo_etiqueta) || '–'}</td>
+      <td>${esc(p.papel) || '–'}${p.papel_alt ? '<br><small style="color:#777">o ' + esc(p.papel_alt) + '</small>' : ''}</td>
+      <td>${esc(p.troquel) || '–'}</td>
+      <td>
+        <button class="btn btn-info btn-sm" onclick="editarProducto(${p.id})">✏ Editar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarProducto(${p.id})">✕</button>
+      </td>
+    </tr>`).join('');
+}
+
+function limpiarForm() {
+  document.getElementById('producto-id').value = '';
+  CAMPOS_TEXTO.forEach(k => document.getElementById(k).value = '');
+  document.getElementById('relieve').value = 'no';
+  alternarRelieve();
+  armarTintas();
+}
+async function nuevoProducto() {
+  await cargarListas();
+  armarSelects();
+  limpiarForm();
+  document.getElementById('modal-title').textContent = 'Nuevo Producto';
+  document.getElementById('modal-overlay').classList.add('active');
+}
+async function editarProducto(id) {
+  await cargarListas();
+  const p = await fetch(`/api/productos/${id}`).then(r => r.json());
+  armarSelects(p);
+  limpiarForm();
+  document.getElementById('producto-id').value = p.id;
+  document.getElementById('modal-title').textContent = 'Editar Producto';
+  CAMPOS_TEXTO.forEach(k => document.getElementById(k).value = p[k] ?? '');
+  CAMPOS_SELECT.forEach(k => document.getElementById(k).value = p[k] ?? '');
+  document.getElementById('relieve').value = p.relieve ? 'si' : 'no';
+  alternarRelieve();
+  armarTintas(p.tintas || []);
+  document.getElementById('modal-overlay').classList.add('active');
+}
+
+async function guardarProducto() {
+  const id = document.getElementById('producto-id').value;
+  const data = {};
+  [...CAMPOS_TEXTO, ...CAMPOS_SELECT].forEach(k => data[k] = document.getElementById(k).value);
+  data.relieve = document.getElementById('relieve').value === 'si';
+  data.tintas = [...document.querySelectorAll('.tinta')].map(i => i.value.trim()).filter(Boolean);
+  if (!data.cliente_id) { alert('El cliente es obligatorio'); return; }
+  const res = await fetch(id ? `/api/productos/${id}` : '/api/productos', {
+    method: id ? 'PUT' : 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data)
+  });
+  const json = await res.json();
+  if (json.error) { alert('Error: ' + json.error); return; }
+  cerrarModal();
+  cargarProductos();
+}
+async function eliminarProducto(id) {
+  if (!confirm('¿Eliminar este producto? Esta acción no se puede deshacer.')) return;
+  await fetch(`/api/productos/${id}`, { method: 'DELETE' });
+  cargarProductos();
+}
+function cerrarModal() { document.getElementById('modal-overlay').classList.remove('active'); }
+document.getElementById('modal-overlay').addEventListener('click', function(e) { if (e.target === this) cerrarModal(); });
+
+const ROLES_LABEL = { ADMIN:'Administrador', COMERCIAL:'Comercial', PRODUCCION:'Producción', DEPOSITO:'Depósito', COMPRAS:'Compras', PREPRENSA:'Preprensa' };
+async function initSesion() {
+  const res = await fetch('/api/me');
+  if (!res.ok) { window.location.href = '/login'; return; }
+  const u = await res.json();
+  if (u.rol !== 'ADMIN') { window.location.href = '/'; return; }
+  document.getElementById('user-label').textContent = `${u.nombre} · ${ROLES_LABEL[u.rol]||u.rol}`;
+  const s = 'color:#aaa;text-decoration:none;font-size:14px;margin-right:12px';
+  document.getElementById('nav-links').innerHTML =
+    `<a href="/" style="${s}">← Órdenes</a><a href="/catalogos.html" style="${s}">📚 Catálogos</a>`;
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+initSesion();
+cargarProductos();
+</script>
+</body>
+</html>
