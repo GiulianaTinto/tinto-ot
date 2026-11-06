@@ -294,7 +294,7 @@
           <input type="text" id="detalle" placeholder="Portillo Rosé">
         </div>
         <div class="form-group" id="grupo-codigo">
-          <label>Código</label>
+          <label>Código del cliente</label>
           <input type="text" id="codigo" placeholder="03467029740002">
         </div>
         <div class="form-group">
@@ -731,7 +731,6 @@ async function nuevaOrden() {
   document.getElementById('fecha_emision').value = hoy;
   document.getElementById('modal-title').textContent = 'Nueva Orden de Trabajo';
   document.getElementById('grupo-estado').style.display = 'none';   // una OT nueva nace PENDIENTE
-  document.getElementById('grupo-codigo').style.display = 'none';
   document.getElementById('modal-overlay').classList.add('active');
 }
 
@@ -742,7 +741,6 @@ async function editarOrden(id) {
   document.getElementById('ot-id').value = o.id;
   document.getElementById('modal-title').textContent = `Editar OT Nº ${o.numero_ot}`;
   document.getElementById('grupo-estado').style.display = '';
-  document.getElementById('grupo-codigo').style.display = o.codigo ? '' : 'none';   // solo si la OT ya tenía código cargado
 
   // Restaurar selector de cliente
   if (o.cliente_id) {
@@ -1033,7 +1031,7 @@ function abrirImpresion(o) {
     <tr>
       <td class="label" width="140">CLIENTE / BODEGA</td>
       <td colspan="3">${o.cliente || ''}</td>
-      <td class="label" width="100">Código</td>
+      <td class="label" width="100">Código del cliente</td>
       <td>${o.codigo || ''}</td>
     </tr>
     <tr>
