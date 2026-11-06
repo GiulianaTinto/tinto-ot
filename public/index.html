@@ -222,6 +222,7 @@
         <th>Cliente / Bodega</th>
         <th>Marca – Varietal</th>
         <th>Detalle</th>
+        <th>Producto</th>
         <th>Fec. Entrega</th>
         <th>Estado</th>
         <th>Acciones</th>
@@ -270,6 +271,16 @@
           </div>
           <div class="cliente-selected-info" id="cliente-info"></div>
         </div>
+        <div class="form-group" id="grupo-producto" style="grid-column:1/-1;display:none">
+          <label>Producto (completa los datos de la OT)</label>
+          <input type="hidden" id="producto_id">
+          <div class="cliente-selector">
+            <input type="text" id="producto" placeholder="Buscá por código, marca o detalle..." autocomplete="off"
+              oninput="buscarProductos()" onfocus="buscarProductos()" onblur="setTimeout(()=>cerrarDropdownProducto(),200)">
+            <div class="cliente-dropdown" id="producto-dropdown"></div>
+          </div>
+          <div class="cliente-selected-info" id="producto-info"></div>
+        </div>
         <div class="form-group">
           <label>Nº Orden Compra</label>
           <input type="text" id="numero_oc" placeholder="64130">
@@ -311,6 +322,11 @@
           <select id="tipo_etiqueta">
             <option value="Frente">Frente</option>
             <option value="Dorso">Dorso</option>
+            <option value="Contra">Contra</option>
+            <option value="Medalla">Medalla</option>
+            <option value="Collarín">Collarín</option>
+            <option value="Sticker">Sticker</option>
+            <option value="Faja">Faja</option>
             <option value="Otro">Otro</option>
           </select>
         </div>
@@ -688,6 +704,7 @@ async function cargarOrdenes() {
       <td>${o.cliente || '–'}</td>
       <td>${o.marca_varietal || '–'}</td>
       <td>${o.detalle || '–'}</td>
+      <td>${o.producto_codigo ? `<code style="font-size:11px">${o.producto_codigo}</code>` : '–'}</td>
       <td>${o.fecha_entrega ? formatFecha(o.fecha_entrega) : '–'}</td>
       <td><span class="badge ${estadoBadge[o.estado] || ''}">${o.estado}</span></td>
       <td>
@@ -730,6 +747,7 @@ async function editarOrden(id) {
     document.getElementById('cliente').value = o.cliente;
   }
 
+  if (o.producto_id) mostrarProducto(o.producto_id);
   const campos = ['numero_ot','numero_oc','marca_varietal','detalle','codigo',
     'fecha_emision','fecha_entrega','maquina','ficha_tecnica','anio','alcohol','contenido',
     'pais_importador','cantidad','papel','troquel','ancho','alto','z','gap_avance',
@@ -766,6 +784,7 @@ function limpiarForm() {
   document.querySelectorAll('.modal-body input, .modal-body textarea').forEach(el => el.value = '');
   document.querySelectorAll('.modal-body select').forEach(el => el.selectedIndex = 0);
   limpiarClienteSelector();
+  limpiarProductoSelector();
   initTintas([]);
   setHerr({});
   setStock([]);
@@ -777,6 +796,7 @@ async function guardarOrden() {
     numero_ot: document.getElementById('numero_ot').value.trim(),
     cliente: document.getElementById('cliente').value,
     cliente_id: document.getElementById('cliente_id').value || null,
+    producto_id: document.getElementById('producto_id').value || null,
     numero_oc: document.getElementById('numero_oc').value,
     marca_varietal: document.getElementById('marca_varietal').value,
     detalle: document.getElementById('detalle').value,
@@ -1201,6 +1221,75 @@ function cerrarDropdown() {
   document.getElementById('cliente-dropdown').classList.remove('open');
 }
 
+// ---- Selector de productos (solo ADMIN por ahora) ----
+let todosLosProductos = [];
+
+async function cargarTodosLosProductos() {
+  const res = await fetch('/api/productos');
+  if (res.ok) todosLosProductos = await res.json();
+}
+
+function buscarProductos() {
+  const q = document.getElementById('producto').value.toLowerCase();
+  const cli = document.getElementById('cliente_id').value;
+  let lista = todosLosProductos;
+  if (cli) lista = lista.filter(p => String(p.cliente_id) === cli);
+  if (q) lista = lista.filter(p => [p.codigo, p.marca, p.detalle, p.cliente].some(v => (v || '').toLowerCase().includes(q)));
+  const dropdown = document.getElementById('producto-dropdown');
+  dropdown.innerHTML = lista.slice(0, 50).map(p => `
+    <div class="cliente-option" onmousedown="seleccionarProducto(${p.id})">
+      <strong>${p.codigo || '(sin código)'}</strong>
+      <small>${[p.cliente, p.marca, p.detalle, p.tipo_etiqueta].filter(Boolean).join(' · ')}</small>
+    </div>`).join('') || '<div class="cliente-option"><small>Sin productos' + (cli ? ' para este cliente' : '') + '</small></div>';
+  dropdown.classList.add('open');
+}
+
+function cerrarDropdownProducto() {
+  document.getElementById('producto-dropdown').classList.remove('open');
+}
+
+function mostrarProducto(id) {
+  const p = todosLosProductos.find(x => x.id === Number(id));
+  document.getElementById('producto_id').value = id;
+  document.getElementById('producto').value = p ? (p.codigo || '(sin código)') : 'Producto #' + id;
+  const info = document.getElementById('producto-info');
+  info.innerHTML = (p ? [p.cliente, p.marca, p.detalle, p.tipo_etiqueta].filter(Boolean).join(' · ') + ' &nbsp;|&nbsp; ' : '') +
+    '<a href="#" onmousedown="limpiarProductoSelector();return false" style="color:#c0392b">Quitar producto</a>';
+  info.classList.add('visible');
+}
+
+function limpiarProductoSelector() {
+  document.getElementById('producto_id').value = '';
+  document.getElementById('producto').value = '';
+  document.getElementById('producto-info').innerHTML = '';
+  document.getElementById('producto-info').classList.remove('visible');
+}
+
+async function seleccionarProducto(id) {
+  const res = await fetch('/api/productos/' + id);
+  if (!res.ok) { alert('No se pudo leer el producto'); return; }
+  const p = await res.json();
+  cerrarDropdownProducto();
+  if (!document.getElementById('cliente_id').value && p.cliente_id) seleccionarCliente(p.cliente_id);
+  mostrarProducto(id);
+  const num = v => { if (v == null || v === '') return ''; const n = Number(v); return isNaN(n) ? String(v) : String(n).replace('.', ','); };
+  const set = (campo, v) => { const el = document.getElementById(campo); if (el && v != null && v !== '') el.value = v; };
+  set('marca_varietal', p.marca);
+  set('detalle', p.detalle);
+  set('tipo_etiqueta', p.tipo_etiqueta);
+  set('anio', p.anada);
+  set('alcohol', p.alcohol);
+  set('contenido', /^\d+$/.test(String(p.cubicacion || '')) ? p.cubicacion + ' ml' : p.cubicacion);
+  const papel = [p.papel_nombre, p.papel_alt_nombre && 'o ' + p.papel_alt_nombre].filter(Boolean).join(' ');
+  set('papel', papel && p.liner ? papel + ' (' + p.liner + ')' : papel);
+  set('troquel', p.troquel_codigo);
+  set('z', p.troquel_z);
+  ['ancho','alto','gap_avance','gap_alto','rep_avance','ancho_sustrato'].forEach(c => set(c, num(p[c])));
+  set('columnas', num(p.filas));
+  document.getElementById('desarrollo').value = 'EXISTENTE';
+  if (Array.isArray(p.tintas) && p.tintas.length) initTintas(p.tintas.map(t => ({ tinta: t, barniz: '' })));
+}
+
 function irAClientes() {
   window.location.href = '/clientes.html';
 }
@@ -1229,6 +1318,7 @@ async function initSesion() {
   nav.innerHTML = `<a href="/clientes.html" style="${linkStyle}">👥 Clientes</a>`;
   nav.innerHTML += `<a href="/calculadora.html" style="${linkStyle}">🧮 Calculadoras</a>`;
   if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/usuarios.html" style="${linkStyle}">⚙ Usuarios</a>`;
+  if (usuarioActual.rol === 'ADMIN') { document.getElementById('grupo-producto').style.display = ''; cargarTodosLosProductos(); }
   if (usuarioActual.rol === 'ADMIN') nav.innerHTML += `<a href="/productos.html" style="${linkStyle}">🏷 Productos</a><a href="/insumos.html" style="${linkStyle}">🧰 Insumos y herramentales</a>`;
 
   // Ocultar botón Nueva OT si no tiene permiso
