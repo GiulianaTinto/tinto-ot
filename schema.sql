@@ -26,6 +26,7 @@ CREATE TABLE IF NOT EXISTS clientes (
 
 CREATE TABLE IF NOT EXISTS ordenes (
   id SERIAL PRIMARY KEY,
+  producto_id INTEGER,                      -- producto de origen (FK a productos, se agrega con ordenes_producto.sql)
   numero_ot TEXT UNIQUE NOT NULL,
   cliente TEXT,
   cliente_id INTEGER REFERENCES clientes(id),
