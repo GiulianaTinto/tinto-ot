@@ -177,7 +177,7 @@ function valoresProducto(d) {
 const COLS_PRODUCTO = ['cliente_id','marca','detalle','tipo_etiqueta','mercado','papel_id','papel_alt_id','liner','troquel_id','ancho','alto','gap_avance','gap_alto','rep_avance','filas','ancho_sustrato','sentido_bobinado','max_etiquetas_rollo','tintas','barniz','serigrafia_id','stamping_marca_id','stamping_cuno_id','relieve','relieve_id','anada','cubicacion','alcohol','observaciones','tecnologia'];
 app.get('/api/productos', solo('ADMIN'), async (req, res) => {
   const { q } = req.query;
-  const sql = `SELECT p.id, p.codigo, p.created_at, p.tecnologia, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.codigo AS troquel
+  const sql = `SELECT p.id, p.cliente_id, p.codigo, p.created_at, p.tecnologia, p.marca, p.detalle, p.tipo_etiqueta, p.mercado, c.nombre AS cliente, pa.nombre AS papel, pb.nombre AS papel_alt, t.codigo AS troquel
     FROM productos p JOIN clientes c ON c.id=p.cliente_id
     LEFT JOIN catalogos pa ON pa.id=p.papel_id LEFT JOIN catalogos pb ON pb.id=p.papel_alt_id LEFT JOIN troqueles t ON t.id=p.troquel_id
     ${q ? 'WHERE c.nombre ILIKE $1 OR p.marca ILIKE $1 OR p.detalle ILIKE $1 OR p.codigo ILIKE $1' : ''} ORDER BY c.nombre, p.marca, p.detalle`;
@@ -185,7 +185,8 @@ app.get('/api/productos', solo('ADMIN'), async (req, res) => {
   res.json(rows);
 });
 app.get('/api/productos/:id', solo('ADMIN'), async (req, res) => {
-  const { rows } = await pool.query('SELECT * FROM productos WHERE id=$1', [req.params.id]);
+  const { rows } = await pool.query(`SELECT p.*, pa.nombre AS papel_nombre, pb.nombre AS papel_alt_nombre, t.codigo AS troquel_codigo, t.z AS troquel_z
+    FROM productos p LEFT JOIN catalogos pa ON pa.id=p.papel_id LEFT JOIN catalogos pb ON pb.id=p.papel_alt_id LEFT JOIN troqueles t ON t.id=p.troquel_id WHERE p.id=$1`, [req.params.id]);
   if (!rows[0]) return res.status(404).json({ error: 'No encontrado' });
   res.json(rows[0]);
 });
@@ -344,10 +345,10 @@ app.delete('/api/cunos/:id', solo('ADMIN'), async (req, res) => {
 const EDITAN_OT = ['ADMIN', 'COMERCIAL', 'PRODUCCION', 'PREPRENSA'];
 app.get('/api/ordenes', authMiddleware, async (req, res) => {
   const { estado, q } = req.query;
-  let sql = 'SELECT id, numero_ot, cliente, marca_varietal, detalle, fecha_entrega, estado, created_at FROM ordenes WHERE 1=1';
+  let sql = 'SELECT id, numero_ot, cliente, marca_varietal, detalle, fecha_entrega, estado, created_at, (SELECT codigo FROM productos WHERE id=ordenes.producto_id) AS producto_codigo FROM ordenes WHERE 1=1';
   const params = [];
   if (estado) { params.push(estado); sql += ` AND estado=$${params.length}`; }
-  if (q) { params.push(`%${q}%`); sql += ` AND (numero_ot ILIKE $${params.length} OR cliente ILIKE $${params.length} OR marca_varietal ILIKE $${params.length})`; }
+  if (q) { params.push(`%${q}%`); sql += ` AND (numero_ot ILIKE $${params.length} OR cliente ILIKE $${params.length} OR marca_varietal ILIKE $${params.length} OR producto_id IN (SELECT id FROM productos WHERE codigo ILIKE $${params.length}))`; }
   sql += ' ORDER BY id DESC';
   const { rows } = await pool.query(sql, params);
   res.json(rows);
@@ -365,6 +366,7 @@ app.post('/api/ordenes', solo(...EDITAN_OT), async (req, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34,$35,$36) RETURNING id`,
       [d.numero_ot,d.cliente,d.cliente_id||null,d.numero_oc,d.marca_varietal,d.detalle,d.codigo,d.fecha_emision,d.fecha_entrega,d.maquina,d.ficha_tecnica,d.tipo_etiqueta,d.anio,d.alcohol,d.contenido,d.pais_importador,d.desarrollo||'NUEVO',d.cantidad,d.papel,d.troquel,d.ancho,d.alto,d.z,d.gap_avance,d.gap_alto,d.rep_avance,d.columnas,d.ancho_sustrato,d.metros_lineales,JSON.stringify(d.tintas||[]),JSON.stringify(d.herramentales||{}),JSON.stringify(d.trazabilidad||{}),JSON.stringify(d.control_calidad||{}),JSON.stringify(d.ingreso_stock||[]),d.observaciones,d.estado||'PENDIENTE']
     );
+    await pool.query('UPDATE ordenes SET producto_id=$1 WHERE id=$2', [idOrNull(d.producto_id), rows[0].id]);
     res.json({ id: rows[0].id });
   } catch(e) { res.status(400).json({ error: e.message }); }
 });
@@ -374,6 +376,7 @@ app.put('/api/ordenes/:id', solo(...EDITAN_OT), async (req, res) => {
     `UPDATE ordenes SET cliente=$1,cliente_id=$2,numero_oc=$3,marca_varietal=$4,detalle=$5,codigo=$6,fecha_emision=$7,fecha_entrega=$8,maquina=$9,ficha_tecnica=$10,tipo_etiqueta=$11,anio=$12,alcohol=$13,contenido=$14,pais_importador=$15,desarrollo=$16,cantidad=$17,papel=$18,troquel=$19,ancho=$20,alto=$21,z=$22,gap_avance=$23,gap_alto=$24,rep_avance=$25,columnas=$26,ancho_sustrato=$27,metros_lineales=$28,tintas=$29,herramentales=$30,trazabilidad=$31,control_calidad=$32,ingreso_stock=$33,observaciones=$34,estado=$35,updated_at=NOW() WHERE id=$36`,
     [d.cliente,d.cliente_id||null,d.numero_oc,d.marca_varietal,d.detalle,d.codigo,d.fecha_emision,d.fecha_entrega,d.maquina,d.ficha_tecnica,d.tipo_etiqueta,d.anio,d.alcohol,d.contenido,d.pais_importador,d.desarrollo,d.cantidad,d.papel,d.troquel,d.ancho,d.alto,d.z,d.gap_avance,d.gap_alto,d.rep_avance,d.columnas,d.ancho_sustrato,d.metros_lineales,JSON.stringify(d.tintas||[]),JSON.stringify(d.herramentales||{}),JSON.stringify(d.trazabilidad||{}),JSON.stringify(d.control_calidad||{}),JSON.stringify(d.ingreso_stock||[]),d.observaciones,d.estado,req.params.id]
   );
+  await pool.query('UPDATE ordenes SET producto_id=$1 WHERE id=$2', [idOrNull(d.producto_id), req.params.id]);
   res.json({ ok: true });
 });
 app.delete('/api/ordenes/:id', solo('ADMIN', 'COMERCIAL'), async (req, res) => {
